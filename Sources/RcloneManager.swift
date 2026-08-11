@@ -72,6 +72,20 @@ struct OperationRecord: Codable, Identifiable {
     /// history can show the before/after (folder size → .zip size).
     let megabytesBefore: Double
     let items: [OperationFileEntry]
+    /// Only set for "Conectado"/"Desconectado" — the connection's display name. Adding this field
+    /// resets any history saved before this update (same accepted trade-off as previous schema
+    /// changes here: it's only the log, nothing else depends on it surviving an app update).
+    var detail: String? = nil
+    /// Only set for "Descarga" — the local folder it landed in, so history answers "where did
+    /// that go" without having to remember or guess.
+    var localPath: String? = nil
+    /// The B2 side of the transfer — destination folder for "Subida", source folder for
+    /// "Descarga" — so history answers "where in the bucket" without cross-referencing the log.
+    var remotePath: String? = nil
+    /// Average throughput for the whole operation (total bytes / total wall-clock seconds), only
+    /// set for "Subida"/"Descarga". nil rather than 0 when the operation was too fast to time
+    /// meaningfully, so the UI can tell "no data" apart from "genuinely instant".
+    var megabytesPerSecond: Double? = nil
 }
 
 @MainActor
@@ -94,8 +108,33 @@ final class RcloneManager: ObservableObject {
     /// open at the same folder instead of always starting at the bucket root.
     @Published var explorerPath = ""
 
-    // ponytail: hardcoded path, add a settings field if rclone isn't always at this location
-    private let rclonePath = "/opt/homebrew/bin/rclone"
+    /// nil means rclone wasn't found anywhere — the UI shows an install prompt instead of the
+    /// normal explorer, since every single operation needs this to run at all.
+    @Published private(set) var rclonePath: String?
+    /// Whether Homebrew itself is present — `brew install rclone` (the fix the app suggests) is
+    /// itself a no-op error ("brew: command not found") without it, so the UI needs to know
+    /// whether to walk the user through installing Homebrew first.
+    @Published private(set) var hasHomebrew = false
+
+    /// Without these, a stalled connection (bad wifi, B2 hiccup) hangs an rclone process forever —
+    /// nothing else in the app notices, so it just looks frozen with no error and no way out.
+    /// `--timeout` is an IDLE timeout (no bytes moving for that long), not a total-duration cap, so
+    /// it won't abort a real transfer that's just slow — only one that's truly stuck.
+    private static let networkTimeoutArgs = ["--contimeout", "15s", "--timeout", "30s"]
+
+    /// Dedup key for the last error logged by a per-item background op (thumbnails, folder
+    /// sizes, hashes) — those can fire dozens of times for the same underlying failure (e.g. one
+    /// bad credential breaking every thumbnail in a gallery), so only the first occurrence of a
+    /// given message logs, instead of flooding the log with identical lines.
+    private var lastBackgroundErrorLogged: String?
+
+    private func logBackgroundErrorOnce(_ context: String, _ errorText: String?) {
+        guard let errorText, !errorText.isEmpty else { return }
+        let key = "\(context)|\(errorText)"
+        guard key != lastBackgroundErrorLogged else { return }
+        lastBackgroundErrorLogged = key
+        log("❌ \(context): \(errorText)")
+    }
     private var process: Process?
     private let historyKey = "b2sync.history.v1"
 
@@ -119,6 +158,34 @@ final class RcloneManager: ObservableObject {
            let decoded = try? JSONDecoder().decode([OperationRecord].self, from: data) {
             history = decoded
         }
+        recheckDependencies()
+    }
+
+    /// Re-runs the rclone/Homebrew detection — lets "Verificar de nuevo" in the missing-rclone
+    /// screen pick up a fresh install without having to fully quit and relaunch the app.
+    func recheckDependencies() {
+        rclonePath = Self.locateExecutable("rclone", knownPaths: ["/opt/homebrew/bin/rclone", "/usr/local/bin/rclone", "/opt/local/bin/rclone"])
+        hasHomebrew = Self.locateExecutable("brew", knownPaths: ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]) != nil
+    }
+
+    /// Checks the known Homebrew install locations (Apple Silicon vs Intel) plus whatever `name`
+    /// resolves to on the user's PATH, covering MacPorts and any manual install too.
+    private static func locateExecutable(_ name: String, knownPaths: [String]) -> String? {
+        for path in knownPaths where FileManager.default.isExecutableFile(atPath: path) {
+            return path
+        }
+        let which = Process()
+        which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+        which.arguments = [name]
+        let pipe = Pipe()
+        which.standardOutput = pipe
+        which.standardError = Pipe()
+        guard (try? which.run()) != nil else { return nil }
+        which.waitUntilExit()
+        let output = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let path = String(data: output, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !path.isEmpty, FileManager.default.isExecutableFile(atPath: path) else { return nil }
+        return path
     }
 
     // Matches ONLY the bytes-transferred stats line, e.g.:
@@ -150,14 +217,29 @@ final class RcloneManager: ObservableObject {
 
     private static let maxHistoryEntries = 2000
 
-    private func recordOperation(type: String, fileCount: Int, success: Bool, bytes: Int64 = 0, bytesBefore: Int64 = 0, items: [OperationFileEntry] = []) {
+    private func recordOperation(type: String, fileCount: Int, success: Bool, bytes: Int64 = 0, bytesBefore: Int64 = 0, items: [OperationFileEntry] = [], detail: String? = nil, localPath: String? = nil, remotePath: String? = nil, elapsedSeconds: TimeInterval = 0) {
         let megabytes = Double(max(bytes, 0)) / 1_048_576
         let megabytesBefore = Double(max(bytesBefore, 0)) / 1_048_576
-        history.insert(OperationRecord(id: UUID(), date: Date(), type: type, fileCount: fileCount, percent: success ? 100 : percent, success: success, megabytes: megabytes, megabytesBefore: megabytesBefore, items: items), at: 0)
+        // Anything under ~1s is too noisy to call a real rate (process startup, cache hits, tiny
+        // files) — leave it nil rather than report a misleadingly huge or tiny number.
+        let speed: Double? = elapsedSeconds > 1 ? megabytes / elapsedSeconds : nil
+        history.insert(OperationRecord(id: UUID(), date: Date(), type: type, fileCount: fileCount, percent: success ? 100 : percent, success: success, megabytes: megabytes, megabytesBefore: megabytesBefore, items: items, detail: detail, localPath: localPath, remotePath: remotePath, megabytesPerSecond: speed), at: 0)
         if history.count > Self.maxHistoryEntries { history.removeLast(history.count - Self.maxHistoryEntries) }
         if let data = try? JSONEncoder().encode(history) {
             UserDefaults.standard.set(data, forKey: historyKey)
         }
+    }
+
+    /// Called from ContentView whenever the active connection changes (switch, new connection,
+    /// or explicit "Desconectar") — lets the history answer "when was I connected to what",
+    /// which the log alone doesn't (it only keeps the last 5000 lines, history keeps 2000 events).
+    func recordConnectionEvent(connected: Bool, name: String) {
+        recordOperation(type: connected ? "Conectado" : "Desconectado", fileCount: 0, success: true, detail: name)
+    }
+
+    func clearHistory() {
+        history.removeAll()
+        UserDefaults.standard.removeObject(forKey: historyKey)
     }
 
     // MARK: - Failed operations (separate from the log — actionable, with a retry button)
@@ -218,12 +300,46 @@ final class RcloneManager: ObservableObject {
 
     // MARK: - Connections (rclone remotes)
 
+    /// `rclone config create` only writes a config file — it never contacts Backblaze, so bad
+    /// credentials or a typo'd bucket name "succeed" at creation time and only fail later, the
+    /// first time something tries to actually list the bucket. This runs that real check right
+    /// away, translating rclone's raw (English, technical) error into what actually went wrong.
+    func validateConnection(remoteName: String, bucket: String, completion: @escaping (String?) -> Void) {
+        runLsJSON(path: "\(remoteName):\(bucket)/") { _, ok, errorText in
+            completion(ok ? nil : Self.friendlyErrorMessage(from: errorText))
+        }
+    }
+
+    static func friendlyErrorMessage(from rawError: String?) -> String {
+        guard let rawError, !rawError.isEmpty else {
+            return "No se pudo conectar. Revisa tu conexión a internet e inténtalo de nuevo."
+        }
+        let lower = rawError.lowercased()
+        if lower.contains("bad_auth_token") || lower.contains("401") || lower.contains("unauthorized") {
+            return "El Key ID o el Application Key no son correctos. Revisa que los copiaste completos, sin espacios ni caracteres de más, desde tu cuenta de Backblaze."
+        }
+        if lower.contains("bucket_not_found") || lower.contains("404") {
+            return "No se encontró ese bucket en tu cuenta de Backblaze. Revisa que el nombre esté escrito exactamente igual (B2 distingue mayúsculas y minúsculas)."
+        }
+        if lower.contains("no such host") || lower.contains("network is unreachable") || lower.contains("timeout") || lower.contains("timed out") {
+            return "No se pudo conectar a Backblaze. Revisa tu conexión a internet e inténtalo de nuevo."
+        }
+        return rawError
+    }
+
     func createRemote(name: String, accountID: String, appKey: String, completion: @escaping (Bool) -> Void) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, !accountID.isEmpty, !appKey.isEmpty else { completion(false); return }
         log("Creando conexión rclone: \(trimmed)")
         run(arguments: ["config", "create", trimmed, "b2", "account=\(accountID)", "key=\(appKey)"]) { [weak self] success in
             self?.log(success ? "✅ Conexión creada." : "❌ No se pudo crear la conexión (revisa las credenciales).")
+            completion(success)
+        }
+    }
+
+    func deleteRemote(name: String, completion: @escaping (Bool) -> Void) {
+        log("Desconectando: \(name)")
+        run(arguments: ["config", "delete", name]) { success in
             completion(success)
         }
     }
@@ -274,7 +390,7 @@ final class RcloneManager: ObservableObject {
             pickerEntries = []
         }
 
-        runLsJSON(path: path) { [weak self] entries, ok in
+        runLsJSON(path: path) { [weak self] entries, ok, errorText in
             guard let self else { return }
             switch target {
             case .main:
@@ -285,7 +401,11 @@ final class RcloneManager: ObservableObject {
                 self.pickerEntries = entries
             }
             if ok { self.listCache[path] = (entries, Date()) }
-            self.log(ok ? "Listados \(entries.count) elemento(s) en \(path)" : "❌ No se pudo listar \(path)")
+            if ok {
+                self.log("Listados \(entries.count) elemento(s) en \(path)")
+            } else {
+                self.log("❌ No se pudo listar \(path)" + (errorText.map { ": \($0)" } ?? ""))
+            }
         }
     }
 
@@ -296,8 +416,12 @@ final class RcloneManager: ObservableObject {
             completion(cached)
             return
         }
-        runLsJSON(path: path) { [weak self] entries, ok in
-            if ok { self?.listCache[path] = (entries, Date()) }
+        runLsJSON(path: path) { [weak self] entries, ok, errorText in
+            if ok {
+                self?.listCache[path] = (entries, Date())
+            } else if let errorText {
+                self?.log("❌ No se pudo listar \(path): \(errorText)")
+            }
             completion(entries)
         }
     }
@@ -307,29 +431,46 @@ final class RcloneManager: ObservableObject {
     /// `rclone link` reuses whichever B2 credentials are already configured for this connection's
     /// remote, so it works per-connection with no extra credential plumbing (unlike shelling out to
     /// the separate `b2` CLI, which is authorized independently of the app's saved connections).
+    private var shareLinkProcess: Process?
+
+    /// Lets the UI offer a real "Cancelar" instead of only a spinner with no way out — terminates
+    /// whatever `generateShareLink` process is in flight; its own completion still fires (with
+    /// a non-zero exit), the caller just needs to treat that the same as any other failure.
+    func cancelShareLink() {
+        shareLinkProcess?.terminate()
+        shareLinkProcess = nil
+    }
+
     func generateShareLink(path: String, expireDays: Int, completion: @escaping (String?) -> Void) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = ["link", "--expire", "\(max(expireDays, 1))d", path]
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["link", "--expire", "\(max(expireDays, 1))d", path]
         let outPipe = Pipe()
+        let errPipe = Pipe()
         task.standardOutput = outPipe
-        task.standardError = Pipe()
+        task.standardError = errPipe
         task.terminationHandler = { [weak self] proc in
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             Task { @MainActor in
+                self?.shareLinkProcess = nil
                 let link = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 if proc.terminationStatus == 0, let link, !link.isEmpty {
                     self?.log("✅ URL para compartir generada (\(expireDays) día(s)).")
                     completion(link)
                 } else {
-                    self?.log("❌ No se pudo generar la URL para compartir.")
+                    let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
+                    self?.log("❌ No se pudo generar la URL para compartir\(suffix)")
                     completion(nil)
                 }
             }
         }
         do {
+            shareLinkProcess = task
             try task.run()
         } catch {
+            shareLinkProcess = nil
             log("❌ No se pudo ejecutar rclone: \(error.localizedDescription)")
             completion(nil)
         }
@@ -341,11 +482,12 @@ final class RcloneManager: ObservableObject {
     /// for thumbnailing without fighting the Explorer's upload/download progress bar).
     func fetchFileBytes(path: String, completion: @escaping (Data?) -> Void) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = ["cat", path]
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["cat", path]
         let outPipe = Pipe()
+        let errPipe = Pipe()
         task.standardOutput = outPipe
-        task.standardError = Pipe()
+        task.standardError = errPipe
 
         do {
             try task.run()
@@ -360,9 +502,14 @@ final class RcloneManager: ObservableObject {
         // own queue, draining the pipe as rclone writes, until it sees EOF at process exit.
         DispatchQueue.global(qos: .utility).async {
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             task.waitUntilExit()
             let ok = task.terminationStatus == 0
             Task { @MainActor in
+                if !ok {
+                    let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    self.logBackgroundErrorOnce("No se pudo descargar \(path)", errorText)
+                }
                 completion(ok ? data : nil)
             }
         }
@@ -384,20 +531,23 @@ final class RcloneManager: ObservableObject {
         let words = Self.searchWords(from: query)
         guard !words.isEmpty else { completion([]); return }
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = ["lsjson", "--recursive", basePath]
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["lsjson", "--recursive", basePath]
         let outPipe = Pipe()
+        let errPipe = Pipe()
         task.standardOutput = outPipe
-        task.standardError = Pipe()
+        task.standardError = errPipe
         do {
             try task.run()
         } catch {
+            log("❌ No se pudo buscar: \(error.localizedDescription)")
             completion([])
             return
         }
         searchTask = task
         DispatchQueue.global(qos: .utility).async {
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             task.waitUntilExit()
             let decoded = task.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
             let matches = (decoded ?? [])
@@ -409,6 +559,12 @@ final class RcloneManager: ObservableObject {
                 .sorted { $0.Path.localizedStandardCompare($1.Path) == .orderedAscending }
             Task { @MainActor in
                 self.searchTask = nil
+                // A cancelled search also exits non-zero — only log when it actually failed.
+                if decoded == nil, task.terminationStatus != 0, task.terminationReason != .uncaughtSignal {
+                    let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
+                    self.log("❌ No se pudo buscar\(suffix)")
+                }
                 completion(matches)
             }
         }
@@ -430,31 +586,33 @@ final class RcloneManager: ObservableObject {
         foldedForSearch(query).split(separator: " ").map(String.init).filter { !$0.isEmpty }
     }
 
-    private func runLsJSON(path: String, completion: @escaping (_ entries: [RemoteEntry], _ ok: Bool) -> Void) {
+    private func runLsJSON(path: String, completion: @escaping (_ entries: [RemoteEntry], _ ok: Bool, _ errorText: String?) -> Void) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = ["lsjson", path]
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["lsjson", path]
         let outPipe = Pipe()
+        let errPipe = Pipe()
         task.standardOutput = outPipe
-        task.standardError = Pipe()
+        task.standardError = errPipe
 
         task.terminationHandler = { proc in
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             Task { @MainActor in
-                let ok = proc.terminationStatus == 0
-                let decoded = ok ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
+                let decoded = proc.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
                 // .bzEmpty is the placeholder file createFolder() drops to make empty folders visible — hide it.
                 let sorted = (decoded ?? [])
                     .filter { $0.Name != ".bzEmpty" }
                     .sorted { $0.Name.localizedStandardCompare($1.Name) == .orderedAscending }
-                completion(sorted, decoded != nil)
+                let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                completion(sorted, decoded != nil, (errorText?.isEmpty ?? true) ? nil : errorText)
             }
         }
 
         do {
             try task.run()
         } catch {
-            completion([], false)
+            completion([], false, error.localizedDescription)
         }
     }
 
@@ -469,17 +627,21 @@ final class RcloneManager: ObservableObject {
         Task { @MainActor in
             await folderSizeLimiter.wait()
             let task = Process()
-            task.executableURL = URL(fileURLWithPath: rclonePath)
-            task.arguments = ["size", path, "--json", "--exclude", ".bzEmpty"]
+            task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+            task.arguments = Self.networkTimeoutArgs + ["size", path, "--json", "--exclude", ".bzEmpty"]
             let outPipe = Pipe()
+            let errPipe = Pipe()
             task.standardOutput = outPipe
-            task.standardError = Pipe()
+            task.standardError = errPipe
             task.terminationHandler = { proc in
                 let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
                 Task { @MainActor in
                     await self.folderSizeLimiter.signal()
                     guard proc.terminationStatus == 0,
                           let result = try? JSONDecoder().decode(SizeResult.self, from: data) else {
+                        let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        self.logBackgroundErrorOnce("No se pudo calcular el tamaño de \(path)", errorText)
                         completion(nil)
                         return
                     }
@@ -525,6 +687,13 @@ final class RcloneManager: ObservableObject {
         deleteSequential(items.map { (path: $0.path, isDir: $0.isDir) }) { [weak self] success in
             self?.log(success ? "✅ Borrado completado." : "❌ Hubo errores al borrar algunos elementos.")
             self?.lastResult = success ? "success" : "error"
+            self?.recordOperation(
+                type: "Borrar",
+                fileCount: items.count,
+                success: success,
+                items: items.map { OperationFileEntry(id: $0.name, megabytes: 0) },
+                remotePath: Self.parentPath(of: items.first?.path ?? "")
+            )
             completion(success)
         }
     }
@@ -681,6 +850,7 @@ final class RcloneManager: ObservableObject {
         guard !isRunning, !items.isEmpty else { completion(false); return }
         lastResult = nil
         isRunning = true
+        let startedAt = Date()
         let pairs = items.map { (from: $0.path, to: Self.destPath(toLocalFolder, $0.name), isDir: $0.isDir) }
         log("Descargando \(pairs.count) elemento(s) a \(toLocalFolder)…")
         totalRemoteSizes(forPaths: items.map(\.path)) { [weak self] sizes in
@@ -691,8 +861,18 @@ final class RcloneManager: ObservableObject {
                 self.log(success ? "✅ Descarga completa." : "❌ Hubo errores al descargar.")
                 self.lastResult = success ? "success" : "error"
                 if recordHistory {
-                    let bytes = pairs.reduce(Int64(0)) { $0 + max(Self.localSize(path: $1.to), 0) }
-                    self.recordOperation(type: "Descarga", fileCount: pairs.count, success: success, bytes: bytes)
+                    let entries = pairs.flatMap { Self.fileEntries(localPath: $0.to) }
+                    let bytes = Int64(entries.reduce(0.0) { $0 + $1.megabytes } * 1_048_576)
+                    self.recordOperation(
+                        type: "Descarga",
+                        fileCount: entries.isEmpty ? pairs.count : entries.count,
+                        success: success,
+                        bytes: bytes,
+                        items: entries,
+                        localPath: toLocalFolder,
+                        remotePath: items.first.map { Self.parentPath(of: $0.path) },
+                        elapsedSeconds: Date().timeIntervalSince(startedAt)
+                    )
                 }
                 if !success && trackFailure {
                     self.recordFailure(type: "Descarga", summary: "\(pairs.count) elemento(s) → \(toLocalFolder)") { [weak self] in
@@ -708,6 +888,7 @@ final class RcloneManager: ObservableObject {
         guard !isRunning, !localPaths.isEmpty else { completion(false); return }
         lastResult = nil
         verifyStatusMessage = nil
+        let startedAt = Date()
         let pairs = localPaths.map { local -> (from: String, to: String, isDir: Bool) in
             let name = (local as NSString).lastPathComponent
             var isDirFlag: ObjCBool = false
@@ -725,7 +906,15 @@ final class RcloneManager: ObservableObject {
             if recordHistory {
                 let entries = pairs.flatMap { Self.fileEntries(localPath: $0.from) }
                 let bytes = Int64(entries.reduce(0.0) { $0 + $1.megabytes } * 1_048_576)
-                self.recordOperation(type: "Subida", fileCount: entries.isEmpty ? pairs.count : entries.count, success: success, bytes: bytes, items: entries)
+                self.recordOperation(
+                    type: "Subida",
+                    fileCount: entries.isEmpty ? pairs.count : entries.count,
+                    success: success,
+                    bytes: bytes,
+                    items: entries,
+                    remotePath: toRemoteFolder,
+                    elapsedSeconds: Date().timeIntervalSince(startedAt)
+                )
             }
             if !success && trackFailure {
                 self.recordFailure(type: "Subida", summary: "\(pairs.count) elemento(s) → \(toRemoteFolder)") { [weak self] in
@@ -931,11 +1120,12 @@ final class RcloneManager: ObservableObject {
     /// pipe's ~64KB buffer.
     private func remoteSHA1Hashes(path: String, completion: @escaping ([String: String]?) -> Void) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = ["hashsum", "sha1", path]
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["hashsum", "sha1", path]
         let outPipe = Pipe()
+        let errPipe = Pipe()
         task.standardOutput = outPipe
-        task.standardError = Pipe()
+        task.standardError = errPipe
         do {
             try task.run()
         } catch {
@@ -944,9 +1134,14 @@ final class RcloneManager: ObservableObject {
         }
         DispatchQueue.global(qos: .utility).async {
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             task.waitUntilExit()
             guard task.terminationStatus == 0, let text = String(data: data, encoding: .utf8) else {
-                Task { @MainActor in completion(nil) }
+                let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                Task { @MainActor in
+                    self.logBackgroundErrorOnce("No se pudo verificar la integridad de \(path)", errorText)
+                    completion(nil)
+                }
                 return
             }
             var result: [String: String] = [:]
@@ -1152,8 +1347,8 @@ final class RcloneManager: ObservableObject {
 
     private func run(arguments: [String], completion: @escaping (Bool) -> Void) {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: rclonePath)
-        task.arguments = arguments
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + arguments
 
         let pipe = Pipe()
         task.standardOutput = pipe

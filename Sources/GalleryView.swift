@@ -20,6 +20,9 @@ struct GalleryView: View {
     @EnvironmentObject var rclone: RcloneManager
     @EnvironmentObject var connectionStore: ConnectionStore
     @StateObject private var thumbnails = ThumbnailStore()
+    // Sheets don't reliably inherit the .locale set on the WindowGroup's content on macOS, so
+    // every .sheet here reapplies it explicitly — same pattern as BackBlaze2SyncApp's WindowGroups.
+    @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
     @State private var browsePath: String
     @State private var entries: [RemoteEntry] = []
@@ -41,7 +44,9 @@ struct GalleryView: View {
         _browsePath = State(initialValue: initialPath)
     }
 
-    private var connection: Connection { connectionStore.active }
+    // The Gallery window can only be opened from the Explorer, which itself requires an active
+    // connection to exist — this fallback is never actually hit, just satisfies the type.
+    private var connection: Connection { connectionStore.active ?? ConnectionStore.defaultConnection }
     private var fullBrowsePath: String { connection.remotePrefix + browsePath }
 
     private var folders: [RemoteEntry] { entries.filter(\.IsDir) }
@@ -95,8 +100,17 @@ struct GalleryView: View {
                 )
             }
         }
-        .sheet(isPresented: $showInfoSheet) { infoSheet }
-        .sheet(isPresented: $showDeleteSheet) { deleteSheet }
+        .sheet(isPresented: $showInfoSheet) { infoSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+        .sheet(isPresented: $showDeleteSheet) { deleteSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+        // Switching the active connection in the main window doesn't close an already-open
+        // Gallery window — without this, it would keep the previous bucket's relative path,
+        // which almost certainly doesn't exist in the new one (same reset ExplorerView does).
+        .onChange(of: connection.id) { _, _ in
+            browsePath = ""
+            lightboxIndex = nil
+            showInfoSheet = false
+            showDeleteSheet = false
+        }
     }
 
     private var header: some View {

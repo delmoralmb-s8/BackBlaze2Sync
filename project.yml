@@ -1,8 +1,8 @@
-name: BlackBlaze2Sync
+name: BackBlaze2Sync
 options:
-  bundleIdPrefix: mx.smh.blackblaze2sync
+  bundleIdPrefix: mx.smh.backblaze2sync
 targets:
-  BlackBlaze2Sync:
+  BackBlaze2Sync:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
@@ -10,7 +10,7 @@ targets:
       - Sources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: mx.smh.blackblaze2sync.app
+        PRODUCT_BUNDLE_IDENTIFIER: mx.smh.backblaze2sync.app
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -21,3 +21,7 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         SWIFT_VERSION: "5.0"
+      configs:
+        Release:
+          ONLY_ACTIVE_ARCH: NO
+          ARCHS: "$(ARCHS_STANDARD)"

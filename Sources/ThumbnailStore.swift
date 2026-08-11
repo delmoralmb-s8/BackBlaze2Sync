@@ -53,7 +53,7 @@ final class ThumbnailStore: ObservableObject {
     init() {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        cacheDir = base.appendingPathComponent("mx.smh.blackblaze2sync/thumbnails", isDirectory: true)
+        cacheDir = base.appendingPathComponent("mx.smh.backblaze2sync/thumbnails", isDirectory: true)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
         Self.enforceCacheLimit(in: cacheDir)
     }

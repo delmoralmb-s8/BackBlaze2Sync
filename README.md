@@ -1,17 +1,17 @@
-# BlackBlaze2Sync
+# BackBlaze2Sync
 
-App nativa de macOS (SwiftUI) para usar Backblaze B2 sin terminal. Por debajo usa `rclone`, pero el usuario nunca ve un comando.
+App nativa de macOS (SwiftUI) para usar Backblaze B2 sin terminal. Por debajo usa `rclone` pero el usuario nunca ve un comando.
 
 ## Por que no es solo otro Cyberduck
 
-Cyberduck y apps parecidas dan acceso a muchos proveedores de nube, pero de forma generica. BlackBlaze2Sync se enfoca solo en Backblaze B2 y por eso puede ofrecer cosas que un cliente generico no tiene:
+Cyberduck y apps parecidas dan acceso a muchos proveedores de nube, pero de forma generica. BackBlaze2Sync se enfoca solo en Backblaze B2 para ofrecer cosas que un cliente generico no tiene:
 
-- Historial de operaciones con detalle por archivo (nombre, tamano, exito o falla), no solo un log de texto.
-- Busqueda difusa en todo el bucket, no solo en la carpeta abierta.
-- Galeria de fotos integrada, con vista de miniaturas y visor a pantalla completa.
-- Comprimir una carpeta remota a .zip sin descargar nada a mano.
+- Historial de operaciones con detalle por archivo:  nombre, tamaño, exito o falla. 
+- Busqueda difusa por carpeta o en toda la raíz del bucket. 
+- Galeria de fotos integrada con vista de miniaturas y visor a pantalla completa.
+- Comprimir una carpeta remota a .zip sin requerir descarga a mano. 
 - Verificacion de integridad automatica despues de subir un archivo.
-- Links de descarga que fuerzan "Guardar archivo" en vez de abrirlo en el navegador.
+- Links de descarga que fuerzan "Guardar archivo" en vez de abrirlo direecto en el navegador.
 
 ## Funciones principales
 
@@ -25,14 +25,26 @@ Cyberduck y apps parecidas dan acceso a muchos proveedores de nube, pero de form
 
 - macOS 14 o superior.
 - Xcode.
-- [rclone](https://rclone.org/) instalado con Homebrew (se espera en `/opt/homebrew/bin/rclone`).
+- [rclone](https://rclone.org/) instalado con Homebrew: `brew install rclone`. La app lo detecta solo (Apple Silicon, Intel o vía PATH); si no lo encuentra, muestra el comando exacto para instalarlo al abrir.
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) para generar el proyecto de Xcode.
 
 ## Como compilar
 
+El `-destination "generic/platform=macOS"` es necesario para que el build sea universal
+(Apple Silicon + Intel) — sin él, `xcodebuild` compila solo para la arquitectura de la Mac
+donde corres el comando.
+
 ```bash
 xcodegen generate
-xcodebuild -project BlackBlaze2Sync.xcodeproj -scheme BlackBlaze2Sync -configuration Release build
+xcodebuild -project BackBlaze2Sync.xcodeproj -scheme BackBlaze2Sync -configuration Release \
+  -destination "generic/platform=macOS" build
+```
+
+Para confirmar que el binario resultante sí es universal:
+
+```bash
+lipo -info BackBlaze2Sync.app/Contents/MacOS/BackBlaze2Sync
+# debe decir: Architectures in the fat file: ... are: x86_64 arm64
 ```
 
 ## Estado del proyecto

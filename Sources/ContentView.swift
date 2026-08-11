@@ -11,11 +11,14 @@ struct ContentView: View {
 
     @State private var showNewConnectionSheet = false
     @State private var newConnName = ""
-    @State private var newConnRemoteName = ""
     @State private var newConnAccountID = ""
     @State private var newConnAppKey = ""
     @State private var newConnBucket = ""
     @State private var isCreatingConnection = false
+    @State private var connectionErrorMessage: String?
+    @State private var showDisconnectConfirm = false
+    @State private var showRenameConnectionPrompt = false
+    @State private var renameConnectionText = ""
 
     @State private var explorerExpanded = true
     @State private var optionsExpanded = false
@@ -25,56 +28,68 @@ struct ContentView: View {
     @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
     var body: some View {
+        if rclone.rclonePath == nil {
+            rcloneMissingView
+        } else {
+            mainBody
+        }
+    }
+
+    private var mainBody: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 connectionBar
 
                 Divider()
 
-                DisclosureGroup(isExpanded: $explorerExpanded) {
-                    ExplorerView(rclone: rclone, connection: connectionStore.active)
-                        .padding(.top, 8)
-                } label: {
-                    Text("Explorador B2").font(.headline)
-                }
-
-                progressSection
-
-                Divider()
-
-                if !rclone.failedOperations.isEmpty {
-                    DisclosureGroup(isExpanded: $errorsExpanded) {
-                        errorsSection.padding(.top, 8)
+                if let active = connectionStore.active {
+                    DisclosureGroup(isExpanded: $explorerExpanded) {
+                        ExplorerView(rclone: rclone, connection: active)
+                            .padding(.top, 8)
                     } label: {
-                        Text("Errores (\(rclone.failedOperations.count))")
-                            .font(.headline)
-                            .foregroundStyle(.red)
+                        Text("Explorador B2").font(.headline)
+                    }
+
+                    progressSection
+
+                    Divider()
+
+                    if !rclone.failedOperations.isEmpty {
+                        DisclosureGroup(isExpanded: $errorsExpanded) {
+                            errorsSection.padding(.top, 8)
+                        } label: {
+                            Text("Errores (\(rclone.failedOperations.count))")
+                                .font(.headline)
+                                .foregroundStyle(.red)
+                        }
+
+                        Divider()
+                    }
+
+                    DisclosureGroup(isExpanded: $optionsExpanded) {
+                        optionsSection.padding(.top, 8)
+                    } label: {
+                        Text("Opciones").font(.headline)
+                    }
+
+                    if let status = rclone.verifyStatusMessage {
+                        Text(status)
+                            .font(.callout)
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(status.hasPrefix("✅") ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
 
                     Divider()
-                }
 
-                DisclosureGroup(isExpanded: $optionsExpanded) {
-                    optionsSection.padding(.top, 8)
-                } label: {
-                    Text("Opciones").font(.headline)
-                }
-
-                if let status = rclone.verifyStatusMessage {
-                    Text(status)
-                        .font(.callout)
-                        .padding(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(status.hasPrefix("✅") ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-
-                Divider()
-
-                DisclosureGroup(isExpanded: $logExpanded) {
-                    logSection.padding(.top, 8)
-                } label: {
-                    Text("Log").font(.headline)
+                    DisclosureGroup(isExpanded: $logExpanded) {
+                        logSection.padding(.top, 8)
+                    } label: {
+                        Text("Log").font(.headline)
+                    }
+                } else {
+                    disconnectedView
                 }
             }
             .padding(20)
@@ -88,56 +103,225 @@ struct ContentView: View {
         .frame(minWidth: 560, minHeight: 500)
         .sheet(isPresented: $showNewConnectionSheet) {
             newConnectionSheet
+                .environment(\.locale, Locale(identifier: appLanguageCode))
         }
+        .onAppear {
+            // Fires once per launch (not on every re-render) — this is what makes "última vez que
+            // se abrió la app y se conectó" show up in the history at all: reconnecting to the
+            // persisted active connection on launch never went through select()/addOrUpdate(),
+            // so it was invisible to the history before this.
+            if let active = connectionStore.active {
+                rclone.recordConnectionEvent(connected: true, name: connectionLabel(active))
+            }
+        }
+    }
+
+    // MARK: - rclone missing
+
+    private var rcloneMissingView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.orange)
+                Text("No se encontró rclone")
+                    .font(.title3.bold())
+                Text("BackBlaze2Sync necesita rclone instalado para funcionar. Son dos comandos, una sola vez, en la app Terminal de tu Mac.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+
+            if !rclone.hasHomebrew {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Paso 1: instalar Homebrew (gestor de paquetes de macOS)")
+                        .font(.callout.bold())
+                    commandRow("/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
+                    Text("Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Paso 2: instalar rclone")
+                        .font(.callout.bold())
+                    commandRow("brew install rclone")
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Instalar rclone (ya tienes Homebrew)")
+                        .font(.callout.bold())
+                    commandRow("brew install rclone")
+                }
+            }
+
+            Button("Ya lo instalé, verificar de nuevo") { rclone.recheckDependencies() }
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .frame(maxWidth: 460, minHeight: 300)
+        .padding(40)
+    }
+
+    @State private var copiedCommand: String?
+
+    private func commandRow(_ command: String) -> some View {
+        HStack {
+            Text(command)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(command, forType: .string)
+                copiedCommand = command
+            } label: {
+                Label(LocalizedStringKey(copiedCommand == command ? "Copiado" : "Copiar"), systemImage: copiedCommand == command ? "checkmark" : "doc.on.doc")
+                    .labelStyle(.iconOnly)
+            }
+        }
+        .padding(8)
+        .background(Color(nsColor: .textBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+
+    // MARK: - Empty state (no active connection)
+
+    private var disconnectedView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "archivebox")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+            Text("No hay ninguna conexión activa")
+                .font(.title3.bold())
+            Text("Crea una conexión con tus credenciales de Backblaze B2 para poder explorar un bucket.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button {
+                newConnName = ""
+                newConnAccountID = ""
+                newConnAppKey = ""
+                newConnBucket = ""
+                connectionErrorMessage = nil
+                showNewConnectionSheet = true
+            } label: {
+                Label("+ Nueva conexión B2…", systemImage: "plus.circle.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .frame(maxWidth: .infinity, minHeight: 300)
+        .padding(40)
     }
 
     // MARK: - Connection picker
 
     private var connectionBar: some View {
         HStack(spacing: 8) {
-            // Deliberately OUTSIDE the Menu: macOS renders a Menu's whole label in one
-            // monochrome tint, so a colored dot or icon placed inside it never shows its real color.
-            Circle()
-                .fill(Color.green)
-                .frame(width: 8, height: 8)
-                .help("Conectado")
+            if let active = connectionStore.active {
+                // Deliberately OUTSIDE the Menu: macOS renders a Menu's whole label in one
+                // monochrome tint, so a colored dot or icon placed inside it never shows its real color.
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                    .help("Conectado")
 
-            Menu {
-                ForEach(connectionStore.connections) { conn in
-                    Button {
-                        connectionStore.select(conn.id)
-                    } label: {
-                        if conn.id == connectionStore.activeID {
-                            Label(conn.name, systemImage: "checkmark")
-                        } else {
-                            Text(conn.name)
+                Menu {
+                    ForEach(connectionStore.connections) { conn in
+                        Button {
+                            let wasAlreadyActive = conn.id == connectionStore.activeID
+                            connectionStore.select(conn.id)
+                            if !wasAlreadyActive { rclone.recordConnectionEvent(connected: true, name: connectionLabel(conn)) }
+                        } label: {
+                            if conn.id == connectionStore.activeID {
+                                Label(conn.name, systemImage: "checkmark")
+                            } else {
+                                Text(conn.name)
+                            }
                         }
                     }
+                } label: {
+                    Label(active.name, systemImage: "archivebox.fill")
+                        .font(.headline)
                 }
-                Divider()
-                Button("+ Nueva conexión B2…") {
-                    newConnName = ""
-                    newConnRemoteName = ""
-                    newConnAccountID = ""
-                    newConnAppKey = ""
-                    newConnBucket = ""
-                    showNewConnectionSheet = true
-                }
-            } label: {
-                Label(connectionStore.active.name, systemImage: "archivebox.fill")
+
+                Text(active.remotePrefix)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Circle()
+                    .fill(Color.secondary)
+                    .frame(width: 8, height: 8)
+                    .help("Desconectado")
+                Text("Sin conexión activa")
                     .font(.headline)
+                    .foregroundStyle(.secondary)
             }
 
-            Text(connectionStore.active.remotePrefix)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Button {
+                newConnName = ""
+                newConnAccountID = ""
+                newConnAppKey = ""
+                newConnBucket = ""
+                connectionErrorMessage = nil
+                showNewConnectionSheet = true
+            } label: {
+                Label("+ Nueva conexión B2…", systemImage: "plus.circle.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.title2)
+            }
+            .buttonStyle(.borderedProminent)
+            .help("Conectar otra cuenta o bucket de Backblaze B2")
+
+            Button {
+                renameConnectionText = connectionStore.active?.name ?? ""
+                showRenameConnectionPrompt = true
+            } label: {
+                Label("Renombrar…", systemImage: "pencil")
+                    .labelStyle(.iconOnly)
+            }
+            .disabled(connectionStore.active == nil)
+            .help("Cambiar el nombre de la conexión activa")
+            .alert("Renombrar conexión", isPresented: $showRenameConnectionPrompt) {
+                TextField("Nombre", text: $renameConnectionText)
+                Button("Renombrar") { renameActiveConnection() }
+                Button("Cancelar", role: .cancel) {}
+            }
+
+            Button {
+                showDisconnectConfirm = true
+            } label: {
+                Label("Desconectar", systemImage: "rectangle.portrait.and.arrow.right")
+                    .labelStyle(.iconOnly)
+            }
+            .disabled(connectionStore.active == nil)
+            .help("Olvidar la conexión activa y sus credenciales")
+            .confirmationDialog(
+                "¿Desconectar esta conexión?",
+                isPresented: $showDisconnectConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Desconectar", role: .destructive) { disconnectActive() }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("Se olvidan sus credenciales guardadas. Tendrás que volver a capturarlas si quieres reconectarte a esta cuenta o bucket.")
+            }
 
             Spacer()
 
-            Button("Historial de operaciones") { openWindow(id: "history") }
+            Button {
+                openWindow(id: "history")
+            } label: {
+                Label("Historial de operaciones", systemImage: "clock.arrow.circlepath")
+                    .labelStyle(.iconOnly)
+            }
+            .help("Historial de operaciones")
 
             // ponytail: plain Picker writing straight to the @AppStorage key is all the
-            // "language switcher" needs — BlackBlaze2SyncApp reads the same key and re-applies
+            // "language switcher" needs — BackBlaze2SyncApp reads the same key and re-applies
             // .environment(\.locale) on change, so no extra plumbing lives here.
             Picker("", selection: $appLanguageCode) {
                 Text("🇲🇽 ES").tag("es")
@@ -161,8 +345,6 @@ struct ContentView: View {
 
             TextField("Nombre (como se muestra en la app)", text: $newConnName)
                 .textFieldStyle(.roundedBorder)
-            TextField("ID interno, sin espacios (ej. mib2-2)", text: $newConnRemoteName)
-                .textFieldStyle(.roundedBorder)
             TextField("Key ID / Account ID de B2", text: $newConnAccountID)
                 .textFieldStyle(.roundedBorder)
             SecureField("Application Key de B2", text: $newConnAppKey)
@@ -178,7 +360,6 @@ struct ContentView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(isCreatingConnection ||
                               newConnName.trimmingCharacters(in: .whitespaces).isEmpty ||
-                              newConnRemoteName.trimmingCharacters(in: .whitespaces).isEmpty ||
                               newConnAccountID.trimmingCharacters(in: .whitespaces).isEmpty ||
                               newConnAppKey.isEmpty ||
                               newConnBucket.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -186,19 +367,93 @@ struct ContentView: View {
         }
         .padding(20)
         .frame(width: 420)
+        .alert(
+            "No se pudo conectar",
+            isPresented: Binding(
+                get: { connectionErrorMessage != nil },
+                set: { if !$0 { connectionErrorMessage = nil } }
+            )
+        ) {
+            Button("OK") {}
+        } message: {
+            // A plain String never auto-localizes through Text(_:) — LocalizedStringKey(_:)
+            // forces the catalog lookup for the small set of known messages friendlyErrorMessage
+            // returns; unrecognized rclone text (no matching key) just falls through verbatim.
+            Text(LocalizedStringKey(connectionErrorMessage ?? ""))
+        }
+    }
+
+    /// rclone needs a short internal remote name per connection, but that's a plumbing detail —
+    /// the user only ever types the display name, so we derive a unique slug from it here instead
+    /// of asking them to invent one.
+    private func generateRemoteName(from name: String) -> String {
+        let folded = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let base = folded.lowercased()
+            .map { $0.isLetter || $0.isNumber ? $0 : "-" }
+            .reduce(into: "") { $0.append($1) }
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        let root = base.isEmpty ? "b2" : base
+        let existing = Set(connectionStore.connections.map(\.remoteName))
+        var candidate = root
+        var suffix = 2
+        while existing.contains(candidate) {
+            candidate = "\(root)-\(suffix)"
+            suffix += 1
+        }
+        return candidate
+    }
+
+    /// "Display name (bucket)" — the display name alone doesn't say which actual bucket it
+    /// points at, and Bernabe names connections after himself/projects, not after buckets.
+    private func connectionLabel(_ connection: Connection) -> String {
+        "\(connection.name) (\(connection.bucket))"
+    }
+
+    private func disconnectActive() {
+        guard let target = connectionStore.active else { return }
+        connectionStore.remove(target.id)
+        rclone.deleteRemote(name: target.remoteName) { _ in }
+        B2CredentialsStore.delete(for: target.remoteName)
+        rclone.recordConnectionEvent(connected: false, name: connectionLabel(target))
+    }
+
+    private func renameActiveConnection() {
+        guard let active = connectionStore.active else { return }
+        connectionStore.rename(active.id, to: renameConnectionText)
     }
 
     private func createConnection() {
         isCreatingConnection = true
+        connectionErrorMessage = nil
         let name = newConnName.trimmingCharacters(in: .whitespaces)
-        let remoteName = newConnRemoteName.trimmingCharacters(in: .whitespaces)
+        let remoteName = generateRemoteName(from: name)
         let bucket = newConnBucket.trimmingCharacters(in: .whitespaces)
-        rclone.createRemote(name: remoteName, accountID: newConnAccountID, appKey: newConnAppKey) { success in
-            isCreatingConnection = false
-            guard success else { return }
-            B2CredentialsStore.save(B2Credentials(accountID: newConnAccountID, appKey: newConnAppKey), for: remoteName)
-            connectionStore.addOrUpdate(Connection(name: name, remoteName: remoteName, bucket: bucket))
-            showNewConnectionSheet = false
+        let accountID = newConnAccountID
+        let appKey = newConnAppKey
+        rclone.createRemote(name: remoteName, accountID: accountID, appKey: appKey) { success in
+            guard success else {
+                isCreatingConnection = false
+                connectionErrorMessage = "No se pudo crear la conexión. Inténtalo de nuevo."
+                return
+            }
+            // createRemote only writes rclone's config file — it never talks to Backblaze, so a
+            // wrong Key ID/Application Key or bucket name "succeeds" here and would otherwise only
+            // fail later, confusingly, the first time the Explorer tries to list something. This
+            // validates for real before accepting the connection, and cleans up after itself if
+            // it turns out to be bad.
+            rclone.validateConnection(remoteName: remoteName, bucket: bucket) { errorMessage in
+                isCreatingConnection = false
+                if let errorMessage {
+                    rclone.deleteRemote(name: remoteName) { _ in }
+                    connectionErrorMessage = errorMessage
+                    return
+                }
+                B2CredentialsStore.save(B2Credentials(accountID: accountID, appKey: appKey), for: remoteName)
+                connectionStore.addOrUpdate(Connection(name: name, remoteName: remoteName, bucket: bucket))
+                rclone.recordConnectionEvent(connected: true, name: "\(name) (\(bucket))")
+                showNewConnectionSheet = false
+            }
         }
     }
 
@@ -316,7 +571,7 @@ struct ContentView: View {
     private func exportLogAsText() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
-        panel.nameFieldStringValue = "BlackBlaze2Sync-log-\(Date().formatted(.iso8601.year().month().day())).txt"
+        panel.nameFieldStringValue = "BackBlaze2Sync-log-\(Date().formatted(.iso8601.year().month().day())).txt"
         panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         try? formattedLogText.write(to: url, atomically: true, encoding: .utf8)

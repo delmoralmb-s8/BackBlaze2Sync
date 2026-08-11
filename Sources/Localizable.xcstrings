@@ -617,6 +617,30 @@
         }
       }
     },
+    "Borrar historial": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear history" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Borrar historial" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Effacer l'historique" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Limpar histórico" } }
+      }
+    },
+    "¿Borrar todo el historial?": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear all history?" } },
+        "es": { "stringUnit": { "state": "translated", "value": "¿Borrar todo el historial?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Effacer tout l'historique ?" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Limpar todo o histórico?" } }
+      }
+    },
+    "Esto no se puede deshacer.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This can't be undone." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Esto no se puede deshacer." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Cette action est irréversible." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Isso não pode ser desfeito." } }
+      }
+    },
     "Borrar seleccionados (%lld)": {
       "localizations": {
         "en": {
@@ -781,6 +805,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Hoy": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Today" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Hoy" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aujourd'hui" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Hoje" } }
+      }
+    },
+    "Ayer": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Yesterday" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ayer" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Hier" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Ontem" } }
+      }
+    },
+    "Renombrar conexión": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename connection" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Renombrar conexión" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Renommer la connexion" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Renomear conexão" } }
+      }
+    },
+    "Cambiar el nombre de la conexión activa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Change the active connection's name" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Cambiar el nombre de la conexión activa" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Changer le nom de la connexion active" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Mudar o nome da conexão ativa" } }
+      }
+    },
+    "Descarga completada": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Download complete" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Descarga completada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Téléchargement terminé" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Download concluído" } }
+      }
+    },
+    "Subida completada": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload complete" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Subida completada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Envoi terminé" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Envio concluído" } }
+      }
+    },
+    "Mostrar en Finder": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show in Finder" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Mostrar en Finder" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher dans le Finder" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Mostrar no Finder" } }
+      }
+    },
+    "Listo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Done" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Listo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Terminé" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Concluído" } }
+      }
+    },
+    "Cancelado.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulé."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelado."
           }
         }
       }
@@ -1289,6 +1405,34 @@
         }
       }
     },
+    "Crea una conexión con tus credenciales de Backblaze B2 para poder explorar un bucket.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a connection with your Backblaze B2 credentials to browse a bucket."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea una conexión con tus credenciales de Backblaze B2 para poder explorar un bucket."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crée une connexion avec vos identifiants Backblaze B2 pour explorer un bucket."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crie uma conexão com suas credenciais do Backblaze B2 para explorar um bucket."
+          }
+        }
+      }
+    },
     "Crea una conexión rclone con tus propias credenciales de Backblaze B2. Se guarda para poder elegirla después junto con \"%@\".": {
       "localizations": {
         "en": {
@@ -1513,6 +1657,174 @@
         }
       }
     },
+    "Desconectado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecté"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desligado"
+          }
+        }
+      }
+    },
+    "Desconectar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecter"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar"
+          }
+        }
+      }
+    },
+    "¿Desconectar esta conexión?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect this connection?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Desconectar esta conexión?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecter cette connexion ?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectar esta conexão?"
+          }
+        }
+      }
+    },
+    "Se olvidan sus credenciales guardadas. Tendrás que volver a capturarlas si quieres reconectarte a esta cuenta o bucket.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its saved credentials are forgotten. You'll need to enter them again if you want to reconnect to this account or bucket."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se olvidan sus credenciales guardadas. Tendrás que volver a capturarlas si quieres reconectarte a esta cuenta o bucket."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ses identifiants enregistrés sont oubliés. Vous devrez les saisir à nouveau pour vous reconnecter à ce compte ou bucket."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As credenciais salvas são esquecidas. Você precisará digitá-las de novo para reconectar a essa conta ou bucket."
+          }
+        }
+      }
+    },
+    "Olvidar la conexión activa y sus credenciales": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forget the active connection and its credentials"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olvidar la conexión activa y sus credenciales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oublier la connexion active et ses identifiants"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esquecer a conexão ativa e suas credenciais"
+          }
+        }
+      }
+    },
+    "Conectar otra cuenta o bucket de Backblaze B2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect another Backblaze B2 account or bucket"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar otra cuenta o bucket de Backblaze B2"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecter un autre compte ou bucket Backblaze B2"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar outra conta ou bucket do Backblaze B2"
+          }
+        }
+      }
+    },
     "Deseleccionar": {
       "localizations": {
         "en": {
@@ -1565,6 +1877,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Desmarcar tudo"
+          }
+        }
+      }
+    },
+    "Escribe una ruta relativa dentro de %@ — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type a path relative to %@ — no bucket name or \":\". Example: folder/subfolder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe una ruta relativa dentro de %@ — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapez un chemin relatif à %@ — sans le nom du bucket ni \":\". Exemple : dossier/sous-dossier"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite um caminho relativo a %@ — sem o nome do bucket nem \":\". Exemplo: pasta/subpasta"
+          }
+        }
+      }
+    },
+    "carpeta/subcarpeta (sin el nombre del bucket)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "folder/subfolder (no bucket name)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "carpeta/subcarpeta (sin el nombre del bucket)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dossier/sous-dossier (sans le nom du bucket)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pasta/subpasta (sem o nome do bucket)"
           }
         }
       }
@@ -2549,6 +2917,34 @@
         }
       }
     },
+    "No hay ninguna conexión activa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active connection"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay ninguna conexión activa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune connexion active"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma conexão ativa"
+          }
+        }
+      }
+    },
     "No hay ninguna operación en curso": {
       "localizations": {
         "en": {
@@ -2577,6 +2973,202 @@
         }
       }
     },
+    "No se encontró rclone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rclone wasn't found"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró rclone"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rclone introuvable"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "rclone não encontrado"
+          }
+        }
+      }
+    },
+    "BackBlaze2Sync necesita rclone instalado para funcionar. Son dos comandos, una sola vez, en la app Terminal de tu Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BackBlaze2Sync needs rclone installed to work. It's two commands, a one-time thing, in your Mac's Terminal app."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BackBlaze2Sync necesita rclone instalado para funcionar. Son dos comandos, una sola vez, en la app Terminal de tu Mac."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BackBlaze2Sync a besoin de rclone pour fonctionner. Ce sont deux commandes, à faire une seule fois, dans l'app Terminal de votre Mac."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O BackBlaze2Sync precisa do rclone instalado para funcionar. São dois comandos, só uma vez, no app Terminal do seu Mac."
+          }
+        }
+      }
+    },
+    "Paso 1: instalar Homebrew (gestor de paquetes de macOS)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 1: install Homebrew (macOS package manager)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso 1: instalar Homebrew (gestor de paquetes de macOS)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Étape 1 : installer Homebrew (gestionnaire de paquets de macOS)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passo 1: instalar o Homebrew (gerenciador de pacotes do macOS)"
+          }
+        }
+      }
+    },
+    "Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It'll ask for your Mac password — that's normal, Homebrew needs it to install itself."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On vous demandera votre mot de passe Mac — c'est normal, Homebrew en a besoin pour s'installer."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vai pedir sua senha do Mac — é normal, o Homebrew precisa dela para se instalar."
+          }
+        }
+      }
+    },
+    "Paso 2: instalar rclone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Step 2: install rclone"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso 2: instalar rclone"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Étape 2 : installer rclone"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passo 2: instalar o rclone"
+          }
+        }
+      }
+    },
+    "Instalar rclone (ya tienes Homebrew)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install rclone (you already have Homebrew)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar rclone (ya tienes Homebrew)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer rclone (vous avez déjà Homebrew)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar o rclone (você já tem o Homebrew)"
+          }
+        }
+      }
+    },
+    "Ya lo instalé, verificar de nuevo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I installed it, check again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya lo instalé, verificar de nuevo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déjà installé, vérifier à nouveau"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Já instalei, verificar de novo"
+          }
+        }
+      }
+    },
     "No se pudo calcular el tamaño.": {
       "localizations": {
         "en": {
@@ -2601,6 +3193,230 @@
           "stringUnit": {
             "state": "translated",
             "value": "Não foi possível calcular o tamanho."
+          }
+        }
+      }
+    },
+    "No se pudo conectar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't connect"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion impossible"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível conectar"
+          }
+        }
+      }
+    },
+    "No se pudo conectar. Revisa tu conexión a internet e inténtalo de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't connect. Check your internet connection and try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar. Revisa tu conexión a internet e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion impossible. Vérifiez votre connexion internet et réessayez."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível conectar. Verifique sua conexão com a internet e tente de novo."
+          }
+        }
+      }
+    },
+    "No se pudo conectar a Backblaze. Revisa tu conexión a internet e inténtalo de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't connect to Backblaze. Check your internet connection and try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar a Backblaze. Revisa tu conexión a internet e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion à Backblaze impossible. Vérifiez votre connexion internet et réessayez."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível conectar ao Backblaze. Verifique sua conexão com a internet e tente de novo."
+          }
+        }
+      }
+    },
+    "No se pudo crear la conexión. Inténtalo de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't create the connection. Try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear la conexión. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de créer la connexion. Réessayez."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível criar a conexão. Tente de novo."
+          }
+        }
+      }
+    },
+    "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't generate the browser link. Your connection might be slow or down — try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de générer le lien pour le navigateur. Votre connexion est peut-être lente ou coupée — réessayez."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível gerar o link para abrir no navegador. Sua conexão pode estar lenta ou fora do ar — tente de novo."
+          }
+        }
+      }
+    },
+    "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't generate the download link. Your connection might be slow or down — try again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de générer le lien de téléchargement. Votre connexion est peut-être lente ou coupée — réessayez."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível gerar o link de download. Sua conexão pode estar lenta ou fora do ar — tente de novo."
+          }
+        }
+      }
+    },
+    "El Key ID o el Application Key no son correctos. Revisa que los copiaste completos, sin espacios ni caracteres de más, desde tu cuenta de Backblaze.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrect Key ID or Application Key. Make sure you copied them exactly from your Backblaze account, without extra spaces or characters."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El Key ID o el Application Key no son correctos. Revisa que los copiaste completos, sin espacios ni caracteres de más, desde tu cuenta de Backblaze."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key ID ou Application Key incorrect. Assurez-vous de les avoir copiés exactement depuis votre compte Backblaze, sans espace ni caractère en trop."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key ID ou Application Key incorretos. Confira se você os copiou exatamente da sua conta do Backblaze, sem espaços ou caracteres extras."
+          }
+        }
+      }
+    },
+    "No se encontró ese bucket en tu cuenta de Backblaze. Revisa que el nombre esté escrito exactamente igual (B2 distingue mayúsculas y minúsculas).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That bucket wasn't found in your Backblaze account. Check that the name is spelled exactly the same (B2 is case-sensitive)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró ese bucket en tu cuenta de Backblaze. Revisa que el nombre esté escrito exactamente igual (B2 distingue mayúsculas y minúsculas)."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce bucket n'a pas été trouvé dans votre compte Backblaze. Vérifiez que le nom est écrit exactement pareil (B2 est sensible à la casse)."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esse bucket não foi encontrado na sua conta do Backblaze. Verifique se o nome está escrito exatamente igual (o B2 diferencia maiúsculas e minúsculas)."
           }
         }
       }
@@ -3193,6 +4009,34 @@
         }
       }
     },
+    "Sin conexión activa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active connection"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin conexión activa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune connexion active"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma conexão ativa"
+          }
+        }
+      }
+    },
     "Sin resultados para \"%@\".": {
       "localizations": {
         "en": {
@@ -3723,6 +4567,14 @@
             "value": "Vista em lista"
           }
         }
+      }
+    },
+    "Vista previa": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Quick Look" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Vista previa" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aperçu rapide" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Visualização rápida" } }
       }
     },
     "o escribe/pega una ruta dentro del bucket": {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct BlackBlaze2SyncApp: App {
+struct BackBlaze2SyncApp: App {
     @StateObject private var rclone = RcloneManager()
     @StateObject private var connectionStore = ConnectionStore()
 

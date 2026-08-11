@@ -54,8 +54,13 @@ enum B2API {
         }
     }
 
+    // Left at the implicit 60s default before — that's a long time to spin with no feedback for
+    // what should be one quick round trip, so every request here gets an explicit, shorter cap.
+    private static let requestTimeout: TimeInterval = 15
+
     private static func authorize(accountID: String, appKey: String, completion: @escaping (AuthResponse?) -> Void) {
         var request = URLRequest(url: URL(string: "https://api.backblazeb2.com/b2api/v2/b2_authorize_account")!)
+        request.timeoutInterval = requestTimeout
         let credentials = Data("\(accountID):\(appKey)".utf8).base64EncodedString()
         request.setValue("Basic \(credentials)", forHTTPHeaderField: "Authorization")
         URLSession.shared.dataTask(with: request) { data, _, error in
@@ -74,6 +79,7 @@ enum B2API {
             return
         }
         var request = URLRequest(url: URL(string: "\(auth.apiUrl)/b2api/v2/b2_list_buckets")!)
+        request.timeoutInterval = requestTimeout
         request.httpMethod = "POST"
         request.setValue(auth.authorizationToken, forHTTPHeaderField: "Authorization")
         request.httpBody = try? JSONSerialization.data(withJSONObject: ["accountId": auth.accountId, "bucketName": bucketName])
@@ -88,6 +94,7 @@ enum B2API {
 
     private static func getDownloadAuth(auth: AuthResponse, bucketID: String, relativePath: String, fileName: String, expireDays: Int, completion: @escaping (String?) -> Void) {
         var request = URLRequest(url: URL(string: "\(auth.apiUrl)/b2api/v2/b2_get_download_authorization")!)
+        request.timeoutInterval = requestTimeout
         request.httpMethod = "POST"
         request.setValue(auth.authorizationToken, forHTTPHeaderField: "Authorization")
         let body: [String: Any] = [

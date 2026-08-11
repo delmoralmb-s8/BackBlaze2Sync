@@ -10,7 +10,7 @@ struct B2Credentials: Codable {
 }
 
 enum B2CredentialsStore {
-    private static let service = "mx.smh.blackblaze2sync.b2creds"
+    private static let service = "mx.smh.backblaze2sync.b2creds"
 
     static func save(_ creds: B2Credentials, for remoteName: String) {
         guard let data = try? JSONEncoder().encode(creds) else { return }
@@ -23,6 +23,15 @@ enum B2CredentialsStore {
         var attributes = query
         attributes[kSecValueData as String] = data
         SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    static func delete(for remoteName: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: remoteName
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 
     static func load(for remoteName: String) -> B2Credentials? {

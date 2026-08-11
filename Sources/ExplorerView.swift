@@ -200,12 +200,31 @@ struct ExplorerView: View {
     @ObservedObject var rclone: RcloneManager
     let connection: Connection
     @Environment(\.openWindow) private var openWindow
+    // Sheets don't reliably inherit the .locale set on the WindowGroup's content on macOS, so
+    // every .sheet here reapplies it explicitly — same pattern as BackBlaze2SyncApp's WindowGroups.
+    @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
+
+    /// A finished upload/download, shown as a confirmation alert. `titleKey` is a fixed,
+    /// localizable phrase ("Descarga completada"/"Subida completada"); `detail` (a filename or
+    /// "N elemento(s)") is shown verbatim since names/counts are never translated. `revealURL` is
+    /// only set for downloads — there's nothing local to reveal for an upload.
+    private struct OperationCompletion: Identifiable {
+        let id = UUID()
+        let titleKey: String
+        let detail: String
+        let revealURL: URL?
+    }
+    @State private var completionAlert: OperationCompletion?
+    /// Pulled out of the `.alert` call itself — same type-checker timeout as `moveConfirmTitle`.
+    private var showCompletionAlert: Binding<Bool> {
+        Binding(get: { completionAlert != nil }, set: { if !$0 { completionAlert = nil } })
+    }
 
     @State private var browsePath = ""
     @State private var pathInput = ""
     @State private var backStack: [String] = []
     @State private var forwardStack: [String] = []
-    @State private var viewMode: ExplorerViewMode = .icons
+    @State private var viewMode: ExplorerViewMode = .list
     // ponytail: reflects "last bulk action taken via this button", not a live re-derivation of
     // every node's isExpanded — the latter doesn't trigger a re-render here since ExplorerView
     // doesn't subscribe to individual ExplorerNode publishers, which was the original bug.
@@ -267,6 +286,7 @@ struct ExplorerView: View {
     @State private var downloadLinkCopied = false
     @State private var downloadCredAccountID = ""
     @State private var downloadCredAppKey = ""
+    @State private var shareLinkErrorMessage: String?
 
     @State private var verifyItem: RemotePathItem?
     @State private var pendingVerifyLocalURL: URL?
@@ -279,6 +299,21 @@ struct ExplorerView: View {
     @State private var verifyFailed = false
 
     private var fullBrowsePath: String { connection.remotePrefix + browsePath }
+
+    /// Pulled out of the `.confirmationDialog` call itself — inlined there, the type checker
+    /// timed out ("unable to type-check this expression in reasonable time") once enough other
+    /// modifiers piled up earlier in the same view's modifier chain.
+    private var moveConfirmTitle: String {
+        "¿Mover a /\(connection.bucket)/\(pendingMoveDestination)?"
+    }
+
+    // ponytail: `.map { ... } ?? ""` produces a plain String at the call site (not a literal),
+    // which binds confirmationDialog's verbatim StringProtocol overload — typing the closure's
+    // return as LocalizedStringKey makes the interpolation build a real catalog lookup (with
+    // entry.Name substituted via %@) instead of baking the filename into an unmatchable key.
+    private var fileActionDialogTitle: LocalizedStringKey {
+        fileActionEntry.map { (entry: RemoteEntry) -> LocalizedStringKey in "¿Qué quieres hacer con \(entry.Name)?" } ?? ""
+    }
     private var fullPickerPath: String { connection.remotePrefix + pickerPath }
 
     /// The destination folder actually targeted in the transfer sheet: defaults to the tree's
@@ -307,7 +342,18 @@ struct ExplorerView: View {
         rclone.remoteEntries.allSatisfy { selectedPaths.contains(fullPath(for: $0, parent: fullBrowsePath)) }
     }
 
+    // Split into stages + a chain of small helper methods below — with this many alerts/sheets/
+    // onChange handlers attached to one view, the type checker started timing out trying to
+    // solve the whole modifier chain as a single expression ("unable to type-check this
+    // expression in reasonable time"). Each stage is independently cheap to check.
     var body: some View {
+        let withLifecycle = applyLifecycleHandlers(to: mainContent)
+        let withCore = applyCoreDialogs(to: withLifecycle)
+        let withSheets = applySheetsAndVerify(to: withCore)
+        return applyTransferDialogs(to: withSheets)
+    }
+
+    private var mainContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Un clic selecciona (reemplaza la selección); Cmd+clic agrega o quita de la selección. Doble clic entra a la carpeta. Clic en vacío deselecciona. Clic derecho para más opciones.")
                 .font(.caption)
@@ -356,10 +402,16 @@ struct ExplorerView: View {
             }
 
             HStack {
-                TextField("o escribe/pega una ruta dentro del bucket", text: $pathInput)
+                TextField("carpeta/subcarpeta (sin el nombre del bucket)", text: $pathInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.caption)
                     .onSubmit { goTo(pathInput) }
+                // goTo(_:) sets browsePath verbatim — no "bucket:" prefix or leading "/" is ever
+                // parsed out, so the only valid syntax really is a bare relative path. This is the
+                // one place that says so explicitly instead of leaving it to be guessed.
+                Image(systemName: "questionmark.circle")
+                    .foregroundStyle(.secondary)
+                    .help("Escribe una ruta relativa dentro de \(connection.bucket) — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta")
                 Button("Ir") { goTo(pathInput) }
                     .disabled(rclone.isListingRemote || rclone.isRunning)
             }
@@ -406,128 +458,158 @@ struct ExplorerView: View {
                 }
             }
         }
-        .onAppear {
-            if rclone.remoteEntries.isEmpty && !rclone.isListingRemote {
+    }
+
+    private func applyLifecycleHandlers(to content: some View) -> some View {
+        content
+            .onAppear {
+                if rclone.remoteEntries.isEmpty && !rclone.isListingRemote {
+                    listCurrentPath()
+                }
+            }
+            // Keyed on remotePrefix (remote + bucket), not connection.id (the display name) —
+            // renaming a connection doesn't change what's being browsed, so it shouldn't blow
+            // away the explorer's state. It used to: renaming re-fetched the SAME listing (same
+            // bucket), so .onChange(of: rclone.remoteEntries) below never re-fired (equal value),
+            // leaving rootNodes stuck at the [] this handler had just set — the list view (which
+            // renders from rootNodes) went blank, while the icon view (reads remoteEntries
+            // directly) didn't.
+            .onChange(of: connection.remotePrefix) { _, _ in
+                browsePath = ""
+                pathInput = ""
+                backStack = []
+                forwardStack = []
+                topLevelExpanded = false
+                selectedPaths = []
+                pathRegistry = [:]
+                rootNodes = []
+                clearSearch()
                 listCurrentPath()
             }
-        }
-        .onChange(of: connection.id) { _, _ in
-            browsePath = ""
-            pathInput = ""
-            backStack = []
-            forwardStack = []
-            topLevelExpanded = false
-            selectedPaths = []
-            pathRegistry = [:]
-            rootNodes = []
-            clearSearch()
-            listCurrentPath()
-        }
-        .onChange(of: browsePath) { _, newValue in
-            pathInput = newValue
-            rclone.explorerPath = newValue
-        }
-        .onChange(of: rclone.remoteEntries) { _, newEntries in
-            register(parentPath: fullBrowsePath, entries: newEntries)
-            let previousByPath = Dictionary(uniqueKeysWithValues: rootNodes.map { ($0.fullPath, $0) })
-            rootNodes = newEntries.map { entry in
-                let node = ExplorerNode(entry: entry, parentFullPath: fullBrowsePath, depth: 0)
-                if let previous = previousByPath[node.fullPath] {
-                    node.restoreState(from: previous)
-                }
-                return node
+            .onChange(of: browsePath) { _, newValue in
+                pathInput = newValue
+                rclone.explorerPath = newValue
             }
-        }
-        .onChange(of: rclone.pickerEntries) { _, newEntries in
-            let dirs = newEntries.filter(\.IsDir)
-            let previousByPath = Dictionary(uniqueKeysWithValues: pickerRootNodes.map { ($0.fullPath, $0) })
-            pickerRootNodes = dirs.map { entry in
-                let node = ExplorerNode(entry: entry, parentFullPath: fullPickerPath, depth: 0)
-                if let previous = previousByPath[node.fullPath] {
-                    node.restoreState(from: previous)
+            .onChange(of: rclone.remoteEntries) { _, newEntries in
+                register(parentPath: fullBrowsePath, entries: newEntries)
+                let previousByPath = Dictionary(uniqueKeysWithValues: rootNodes.map { ($0.fullPath, $0) })
+                rootNodes = newEntries.map { entry in
+                    let node = ExplorerNode(entry: entry, parentFullPath: fullBrowsePath, depth: 0)
+                    if let previous = previousByPath[node.fullPath] {
+                        node.restoreState(from: previous)
+                    }
+                    return node
                 }
-                return node
             }
-        }
-        .confirmationDialog("¿Borrar de B2? Esto no se puede deshacer.", isPresented: $showDeleteConfirm) {
-            Button("Borrar \(selectedPaths.count) elemento(s)", role: .destructive) { performDelete() }
-            Button("Cancelar", role: .cancel) {}
-        } message: {
-            Text(deleteConfirmMessage)
-        }
-        .alert("Nueva carpeta", isPresented: $showNewFolderPrompt) {
-            TextField("Nombre", text: $newFolderName)
-            Button("Crear") { confirmCreateFolder() }
-            Button("Cancelar", role: .cancel) { newFolderName = "" }
-        } message: {
-            Text("Se creará dentro de \(newFolderTarget == .explorer ? fullBrowsePath : fullPickerTargetPath)")
-        }
-        .alert("Renombrar", isPresented: $showRenamePrompt) {
-            TextField("Nuevo nombre", text: $renameNewName)
-            Button("Renombrar") { confirmRename() }
-            Button("Cancelar", role: .cancel) { renameNewName = "" }
-        } message: {
-            if let target = renameTarget { Text("Renombrando \"\(target.name)\"") }
-        }
-        .sheet(isPresented: $showTransferSheet) { transferSheet }
-        .sheet(isPresented: $showInfoSheet) { infoSheet }
-        .sheet(isPresented: $showShareSheet) { shareSheet }
-        .sheet(isPresented: $showVerifySheet) { verifySheet }
-        .alert("Nombre(s) de archivo(s) no son idénticos, ¿quieres continuar?", isPresented: $showVerifyNameMismatchAlert) {
-            Button("Continuar") {
+            .onChange(of: rclone.pickerEntries) { _, newEntries in
+                let dirs = newEntries.filter(\.IsDir)
+                let previousByPath = Dictionary(uniqueKeysWithValues: pickerRootNodes.map { ($0.fullPath, $0) })
+                pickerRootNodes = dirs.map { entry in
+                    let node = ExplorerNode(entry: entry, parentFullPath: fullPickerPath, depth: 0)
+                    if let previous = previousByPath[node.fullPath] {
+                        node.restoreState(from: previous)
+                    }
+                    return node
+                }
+            }
+    }
+
+    private func applyCoreDialogs(to content: some View) -> some View {
+        content
+            .confirmationDialog("¿Borrar de B2? Esto no se puede deshacer.", isPresented: $showDeleteConfirm) {
+                Button("Borrar \(selectedPaths.count) elemento(s)", role: .destructive) { performDelete() }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text(deleteConfirmMessage)
+            }
+            .alert("Nueva carpeta", isPresented: $showNewFolderPrompt) {
+                TextField("Nombre", text: $newFolderName)
+                Button("Crear") { confirmCreateFolder() }
+                Button("Cancelar", role: .cancel) { newFolderName = "" }
+            } message: {
+                Text("Se creará dentro de \(newFolderTarget == .explorer ? fullBrowsePath : fullPickerTargetPath)")
+            }
+            .alert("Renombrar", isPresented: $showRenamePrompt) {
+                TextField("Nuevo nombre", text: $renameNewName)
+                Button("Renombrar") { confirmRename() }
+                Button("Cancelar", role: .cancel) { renameNewName = "" }
+            } message: {
+                if let target = renameTarget { Text("Renombrando \"\(target.name)\"") }
+            }
+            .alert(
+                "Listo",
+                isPresented: showCompletionAlert,
+                presenting: completionAlert
+            ) { info in
+                if let url = info.revealURL {
+                    Button("Mostrar en Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                }
+                Button("OK") {}
+            } message: { info in
+                Text(LocalizedStringKey(info.titleKey)) + Text(": ") + Text(info.detail)
+            }
+    }
+
+    private func applySheetsAndVerify(to content: some View) -> some View {
+        content
+            .sheet(isPresented: $showTransferSheet) { transferSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+            .sheet(isPresented: $showInfoSheet) { infoSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+            .sheet(isPresented: $showShareSheet) { shareSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+            .sheet(isPresented: $showVerifySheet) { verifySheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+            .alert("Nombre(s) de archivo(s) no son idénticos, ¿quieres continuar?", isPresented: $showVerifyNameMismatchAlert) {
+                Button("Continuar") {
+                    if let url = pendingVerifyLocalURL, let item = verifyItem {
+                        beginVerify(localURL: url, item: item)
+                    }
+                    pendingVerifyLocalURL = nil
+                }
+                Button("Cancelar", role: .cancel) {
+                    pendingVerifyLocalURL = nil
+                    verifyItem = nil
+                }
+            } message: {
                 if let url = pendingVerifyLocalURL, let item = verifyItem {
-                    beginVerify(localURL: url, item: item)
+                    Text("Local: \(url.lastPathComponent)\nB2: \(item.name)")
                 }
-                pendingVerifyLocalURL = nil
             }
-            Button("Cancelar", role: .cancel) {
-                pendingVerifyLocalURL = nil
-                verifyItem = nil
+    }
+
+    private func applyTransferDialogs(to content: some View) -> some View {
+        content
+            .confirmationDialog(moveConfirmTitle, isPresented: $showMoveConfirm) {
+                Button("Mover \(pendingMoveItems.count) elemento(s)") { performDragMove() }
+                Button("Cancelar", role: .cancel) { pendingMoveItems = []; pendingMoveDestination = "" }
+            } message: {
+                Text(pendingMoveItems.map(\.name).joined(separator: ", "))
             }
-        } message: {
-            if let url = pendingVerifyLocalURL, let item = verifyItem {
-                Text("Local: \(url.lastPathComponent)\nB2: \(item.name)")
+            .alert("Carpetas vacías detectadas", isPresented: $showEmptyFoldersAlert) {
+                Button("Subir de todas formas") {
+                    performUpload(paths: pendingUploadPaths, into: pendingUploadDestination)
+                    pendingUploadPaths = []
+                    pendingEmptyFolders = []
+                }
+                Button("Cancelar", role: .cancel) {
+                    pendingUploadPaths = []
+                    pendingEmptyFolders = []
+                }
+            } message: {
+                // ponytail: keep the dynamic folder list (data) out of the literal, but interpolate
+                // it inline so the fixed lead sentence still localizes instead of riding along
+                // verbatim inside a pre-built String.
+                Text("B2 no guarda carpetas vacías — estas no van a aparecer del otro lado:\n\(emptyFoldersPreview)")
             }
-        }
-        .confirmationDialog("¿Mover a /\(connection.bucket)/\(pendingMoveDestination)?", isPresented: $showMoveConfirm) {
-            Button("Mover \(pendingMoveItems.count) elemento(s)") { performDragMove() }
-            Button("Cancelar", role: .cancel) { pendingMoveItems = []; pendingMoveDestination = "" }
-        } message: {
-            Text(pendingMoveItems.map(\.name).joined(separator: ", "))
-        }
-        .alert("Carpetas vacías detectadas", isPresented: $showEmptyFoldersAlert) {
-            Button("Subir de todas formas") {
-                performUpload(paths: pendingUploadPaths, into: pendingUploadDestination)
-                pendingUploadPaths = []
-                pendingEmptyFolders = []
+            .confirmationDialog(
+                fileActionDialogTitle,
+                isPresented: $showFileActionDialog,
+                titleVisibility: .visible
+            ) {
+                if let entry = fileActionEntry {
+                    Button("Abrir") { openSearchResult(entry) }
+                    Button("Descargar") { downloadDefault([searchResultItem(entry)]) }
+                    Button("Descargar a…") { downloadChoosingFolder([searchResultItem(entry)]) }
+                }
+                Button("Cancelar", role: .cancel) {}
             }
-            Button("Cancelar", role: .cancel) {
-                pendingUploadPaths = []
-                pendingEmptyFolders = []
-            }
-        } message: {
-            // ponytail: keep the dynamic folder list (data) out of the literal, but interpolate
-            // it inline so the fixed lead sentence still localizes instead of riding along
-            // verbatim inside a pre-built String.
-            Text("B2 no guarda carpetas vacías — estas no van a aparecer del otro lado:\n\(emptyFoldersPreview)")
-        }
-        .confirmationDialog(
-            // ponytail: `.map { ... } ?? ""` produces a plain String at the call site (not a
-            // literal), which binds confirmationDialog's verbatim StringProtocol overload —
-            // typing the closure's return as LocalizedStringKey makes the interpolation build a
-            // real catalog lookup (with entry.Name substituted via %@) instead of baking the
-            // filename into an unmatchable key.
-            fileActionEntry.map { (entry: RemoteEntry) -> LocalizedStringKey in "¿Qué quieres hacer con \(entry.Name)?" } ?? "",
-            isPresented: $showFileActionDialog,
-            titleVisibility: .visible
-        ) {
-            if let entry = fileActionEntry {
-                Button("Abrir") { openSearchResult(entry) }
-                Button("Descargar") { downloadDefault([searchResultItem(entry)]) }
-                Button("Descargar a…") { downloadChoosingFolder([searchResultItem(entry)]) }
-            }
-            Button("Cancelar", role: .cancel) {}
-        }
     }
 
     private var emptyFoldersPreview: String {
@@ -712,6 +794,22 @@ struct ExplorerView: View {
         rclone.downloadItems([item], toLocalFolder: tempDir, recordHistory: false, trackFailure: false) { success in
             guard success else { return }
             NSWorkspace.shared.open(URL(fileURLWithPath: tempDir).appendingPathComponent(entry.Name))
+        }
+    }
+
+    /// Same download-to-temp dance as `openSearchResult`, but hands the result to Quick Look
+    /// instead of the file's default app — a fast look at what's inside, no app launch, no
+    /// editing risk.
+    private func previewFile(_ item: RemotePathItem) {
+        let tempDir = NSTemporaryDirectory() + "b2sync-preview-" + UUID().uuidString
+        do {
+            try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        } catch {
+            return
+        }
+        rclone.downloadItems([item], toLocalFolder: tempDir, recordHistory: false, trackFailure: false) { success in
+            guard success else { return }
+            QuickLookController.shared.show(url: URL(fileURLWithPath: Self.localDestPath(tempDir, item.name)))
         }
     }
 
@@ -1007,6 +1105,14 @@ struct ExplorerView: View {
         Button("Descargar a…") { downloadChoosingFolder(targets) }
 
         if !clicked.isDir {
+            // No extension whitelist on purpose — Quick Look itself already knows what it can
+            // and can't render (same as pressing Space in Finder on any file), so gating this on
+            // a hand-maintained list of extensions would just be a second, incomplete copy of
+            // that same knowledge.
+            Button("Vista previa") { previewFile(clicked) }
+        }
+
+        if !clicked.isDir {
             Button("Generar URL para compartir…") {
                 shareItem = clicked
                 shareViewLink = nil
@@ -1016,6 +1122,9 @@ struct ExplorerView: View {
                 downloadCredAccountID = ""
                 downloadCredAppKey = ""
                 shareDurationDays = 7
+                shareLinkErrorMessage = nil
+                isGeneratingViewLink = false
+                isGeneratingDownloadLink = false
                 showShareSheet = true
             }
         }
@@ -1059,7 +1168,7 @@ struct ExplorerView: View {
         guard !items.isEmpty else { return }
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first?.path
             ?? (NSHomeDirectory() + "/Downloads")
-        rclone.downloadItems(items, toLocalFolder: downloads)
+        performDownload(items, toLocalFolder: downloads)
     }
 
     private func downloadChoosingFolder(_ items: [RemotePathItem]) {
@@ -1070,7 +1179,30 @@ struct ExplorerView: View {
         panel.allowsMultipleSelection = false
         panel.prompt = "Descargar aquí"
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        rclone.downloadItems(items, toLocalFolder: url.path)
+        performDownload(items, toLocalFolder: url.path)
+    }
+
+    /// Single choke point for every "Descargar"/"Descargar a…" call — shows a completion alert
+    /// with a "Mostrar en Finder" button pointed at the actual downloaded file (or the
+    /// destination folder itself, for multi-item downloads where there's no single file to select).
+    private func performDownload(_ items: [RemotePathItem], toLocalFolder: String) {
+        rclone.downloadItems(items, toLocalFolder: toLocalFolder) { success in
+            guard success else { return }
+            let detail: String
+            let revealURL: URL
+            if items.count == 1 {
+                detail = items[0].name
+                revealURL = URL(fileURLWithPath: Self.localDestPath(toLocalFolder, items[0].name))
+            } else {
+                detail = "\(items.count) elemento(s)"
+                revealURL = URL(fileURLWithPath: toLocalFolder)
+            }
+            completionAlert = OperationCompletion(titleKey: "Descarga completada", detail: detail, revealURL: revealURL)
+        }
+    }
+
+    private static func localDestPath(_ base: String, _ name: String) -> String {
+        base.hasSuffix("/") ? base + name : base + "/" + name
     }
 
     private func uploadFiles(into remoteFolder: String) {
@@ -1116,8 +1248,11 @@ struct ExplorerView: View {
     }
 
     private func performUpload(paths: [String], into remoteFolder: String) {
-        rclone.uploadLocalPaths(paths, toRemoteFolder: remoteFolder) { _ in
+        rclone.uploadLocalPaths(paths, toRemoteFolder: remoteFolder) { success in
             refreshAfterRemoteChange(at: remoteFolder)
+            guard success else { return }
+            let detail = paths.count == 1 ? (paths[0] as NSString).lastPathComponent : "\(paths.count) elemento(s)"
+            completionAlert = OperationCompletion(titleKey: "Subida completada", detail: detail, revealURL: nil)
         }
     }
 
@@ -1438,7 +1573,7 @@ struct ExplorerView: View {
                     viewLinkCopied = true
                 }
             } else if isGeneratingViewLink {
-                ProgressView().controlSize(.small)
+                generatingIndicator("rclone link \(shareItem?.name ?? "")")
             }
 
             if let link = shareDownloadLink {
@@ -1447,7 +1582,7 @@ struct ExplorerView: View {
                     downloadLinkCopied = true
                 }
             } else if isGeneratingDownloadLink {
-                ProgressView().controlSize(.small)
+                generatingIndicator("Autorizando con Backblaze B2")
             } else if shareViewLink != nil, B2CredentialsStore.load(for: connection.remoteName) == nil {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Para el link de descarga, captura una vez tus credenciales de B2 (se guardan en el Keychain de tu Mac):")
@@ -1464,9 +1599,19 @@ struct ExplorerView: View {
                 }
             }
 
+            if let shareLinkErrorMessage {
+                Text(LocalizedStringKey(shareLinkErrorMessage))
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
             HStack {
                 Button("Cerrar") { showShareSheet = false }
                 Spacer()
+                if isGeneratingViewLink || isGeneratingDownloadLink {
+                    Button("Cancelar", role: .cancel) { cancelLinkGeneration() }
+                        .font(.caption)
+                }
                 Button(LocalizedStringKey(shareViewLink == nil ? "Generar" : "Regenerar")) { generateLinks() }
                     .buttonStyle(.borderedProminent)
                     .disabled(isGeneratingViewLink || isGeneratingDownloadLink)
@@ -1474,6 +1619,22 @@ struct ExplorerView: View {
         }
         .padding(20)
         .frame(width: 520)
+    }
+
+    /// Same idea as the search indicator: no meaningful progress to show mid-request, but naming
+    /// the actual thing that's happening (plus a moving dot) reads as "still working", not stuck.
+    private func generatingIndicator(_ label: String) -> some View {
+        TimelineView(.periodic(from: .now, by: 0.4)) { context in
+            let dots = String(repeating: ".", count: Int(context.date.timeIntervalSinceReferenceDate / 0.4) % 4)
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("\(label)\(dots)")
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+        }
     }
 
     // ponytail: `title` used to be a plain String — Text(String) is the VERBATIM overload, so the
@@ -1494,19 +1655,32 @@ struct ExplorerView: View {
         }
     }
 
+    /// Bumped on every new attempt AND on "Cancelar" — a completion only applies its result if
+    /// this still matches, so a cancelled or superseded request can't clobber the sheet with a
+    /// stale link/error after the user has already moved on. Same pattern as ExplorerView's own
+    /// `searchGeneration`.
+    @State private var linkGeneration = 0
+
     private func generateLinks() {
         guard let item = shareItem else { return }
+        linkGeneration += 1
+        let generation = linkGeneration
+        shareLinkErrorMessage = nil
         isGeneratingViewLink = true
         viewLinkCopied = false
         shareViewLink = nil
         rclone.generateShareLink(path: item.path, expireDays: shareDurationDays) { link in
+            guard generation == linkGeneration else { return }
             isGeneratingViewLink = false
             shareViewLink = link
+            if link == nil {
+                shareLinkErrorMessage = "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+            }
         }
-        generateDownloadLinkIfPossible()
+        generateDownloadLinkIfPossible(generation: generation)
     }
 
-    private func generateDownloadLinkIfPossible() {
+    private func generateDownloadLinkIfPossible(generation: Int) {
         guard let item = shareItem, let creds = B2CredentialsStore.load(for: connection.remoteName) else {
             shareDownloadLink = nil
             return
@@ -1523,9 +1697,24 @@ struct ExplorerView: View {
             fileName: item.name,
             expireDays: shareDurationDays
         ) { link in
+            guard generation == linkGeneration else { return }
             isGeneratingDownloadLink = false
             shareDownloadLink = link
+            if link == nil {
+                shareLinkErrorMessage = "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+            }
         }
+    }
+
+    /// The URLSession requests behind the download link aren't actually aborted — they'll just
+    /// finish in the background and get ignored by the generation check above. Fine: they're
+    /// capped at 15s each now, so "ignored eventually" isn't "ignored forever" like before.
+    private func cancelLinkGeneration() {
+        linkGeneration += 1
+        rclone.cancelShareLink()
+        isGeneratingViewLink = false
+        isGeneratingDownloadLink = false
+        shareLinkErrorMessage = "Cancelado."
     }
 
     private func saveCredentialsAndGenerateDownloadLink() {
@@ -1535,7 +1724,8 @@ struct ExplorerView: View {
         B2CredentialsStore.save(B2Credentials(accountID: accountID, appKey: appKey), for: connection.remoteName)
         downloadCredAccountID = ""
         downloadCredAppKey = ""
-        generateDownloadLinkIfPossible()
+        linkGeneration += 1
+        generateDownloadLinkIfPossible(generation: linkGeneration)
     }
 
     private func copyToPasteboard(_ text: String) {
