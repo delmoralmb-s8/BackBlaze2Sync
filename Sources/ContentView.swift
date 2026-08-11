@@ -220,119 +220,119 @@ struct ContentView: View {
     // MARK: - Connection picker
 
     private var connectionBar: some View {
-        HStack(spacing: 8) {
-            if let active = connectionStore.active {
-                // Deliberately OUTSIDE the Menu: macOS renders a Menu's whole label in one
-                // monochrome tint, so a colored dot or icon placed inside it never shows its real color.
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 8, height: 8)
-                    .help("Conectado")
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                if let active = connectionStore.active {
+                    // Deliberately OUTSIDE the Menu: macOS renders a Menu's whole label in one
+                    // monochrome tint, so a colored dot or icon placed inside it never shows its real color.
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                        .help("Conectado")
 
-                Menu {
-                    ForEach(connectionStore.connections) { conn in
-                        Button {
-                            let wasAlreadyActive = conn.id == connectionStore.activeID
-                            connectionStore.select(conn.id)
-                            if !wasAlreadyActive { rclone.recordConnectionEvent(connected: true, name: connectionLabel(conn)) }
-                        } label: {
-                            if conn.id == connectionStore.activeID {
-                                Label(conn.name, systemImage: "checkmark")
-                            } else {
-                                Text(conn.name)
+                    // Everything besides "switch to this connection" (rename/new/disconnect)
+                    // lives in this same menu now, below a Divider — one compact control instead
+                    // of four separate buttons crowding the bar.
+                    Menu {
+                        ForEach(connectionStore.connections) { conn in
+                            Button {
+                                let wasAlreadyActive = conn.id == connectionStore.activeID
+                                connectionStore.select(conn.id)
+                                if !wasAlreadyActive { rclone.recordConnectionEvent(connected: true, name: connectionLabel(conn)) }
+                            } label: {
+                                if conn.id == connectionStore.activeID {
+                                    Label(conn.name, systemImage: "checkmark")
+                                } else {
+                                    Text(conn.name)
+                                }
                             }
                         }
+
+                        Divider()
+
+                        Button {
+                            renameConnectionText = active.name
+                            showRenameConnectionPrompt = true
+                        } label: {
+                            Label("Renombrar…", systemImage: "pencil")
+                        }
+
+                        Button {
+                            newConnName = ""
+                            newConnAccountID = ""
+                            newConnAppKey = ""
+                            newConnBucket = ""
+                            connectionErrorMessage = nil
+                            showNewConnectionSheet = true
+                        } label: {
+                            Label("+ Nueva conexión B2…", systemImage: "plus.circle.fill")
+                        }
+
+                        Button(role: .destructive) {
+                            showDisconnectConfirm = true
+                        } label: {
+                            Label("Desconectar", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } label: {
+                        Label(active.name, systemImage: "archivebox.fill")
+                            .font(.headline)
                     }
-                } label: {
-                    Label(active.name, systemImage: "archivebox.fill")
+                    .alert("Renombrar conexión", isPresented: $showRenameConnectionPrompt) {
+                        TextField("Nombre", text: $renameConnectionText)
+                        Button("Renombrar") { renameActiveConnection() }
+                        Button("Cancelar", role: .cancel) {}
+                    }
+                    .confirmationDialog(
+                        "¿Desconectar esta conexión?",
+                        isPresented: $showDisconnectConfirm,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Desconectar", role: .destructive) { disconnectActive() }
+                        Button("Cancelar", role: .cancel) {}
+                    } message: {
+                        Text("Se olvidan sus credenciales guardadas. Tendrás que volver a capturarlas si quieres reconectarte a esta cuenta o bucket.")
+                    }
+                } else {
+                    Circle()
+                        .fill(Color.secondary)
+                        .frame(width: 8, height: 8)
+                        .help("Desconectado")
+                    Text("Sin conexión activa")
                         .font(.headline)
+                        .foregroundStyle(.secondary)
                 }
 
-                Text(active.remotePrefix)
-                    .font(.caption)
+                Spacer()
+
+                Button {
+                    openWindow(id: "history")
+                } label: {
+                    Label("Historial de operaciones", systemImage: "clock.arrow.circlepath")
+                        .labelStyle(.iconOnly)
+                }
+                .help("Historial de operaciones")
+
+                // ponytail: plain Picker writing straight to the @AppStorage key is all the
+                // "language switcher" needs — BackBlaze2SyncApp reads the same key and re-applies
+                // .environment(\.locale) on change, so no extra plumbing lives here.
+                Picker("", selection: $appLanguageCode) {
+                    Text("🇲🇽 ES").tag("es")
+                    Text("🇺🇸 EN").tag("en")
+                    Text("🇵🇹 PT").tag("pt")
+                    Text("🇫🇷 FR").tag("fr")
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 78)
+                .help("Idioma")
+            }
+
+            if let active = connectionStore.active {
+                Text("\(active.remoteName)_\(active.bucket)")
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
-            } else {
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: 8, height: 8)
-                    .help("Desconectado")
-                Text("Sin conexión activa")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .padding(.leading, 28)
             }
-
-            Button {
-                newConnName = ""
-                newConnAccountID = ""
-                newConnAppKey = ""
-                newConnBucket = ""
-                connectionErrorMessage = nil
-                showNewConnectionSheet = true
-            } label: {
-                Label("+ Nueva conexión B2…", systemImage: "plus.circle.fill")
-                    .labelStyle(.iconOnly)
-                    .font(.title2)
-            }
-            .buttonStyle(.borderedProminent)
-            .help("Conectar otra cuenta o bucket de Backblaze B2")
-
-            Button {
-                renameConnectionText = connectionStore.active?.name ?? ""
-                showRenameConnectionPrompt = true
-            } label: {
-                Label("Renombrar…", systemImage: "pencil")
-                    .labelStyle(.iconOnly)
-            }
-            .disabled(connectionStore.active == nil)
-            .help("Cambiar el nombre de la conexión activa")
-            .alert("Renombrar conexión", isPresented: $showRenameConnectionPrompt) {
-                TextField("Nombre", text: $renameConnectionText)
-                Button("Renombrar") { renameActiveConnection() }
-                Button("Cancelar", role: .cancel) {}
-            }
-
-            Button {
-                showDisconnectConfirm = true
-            } label: {
-                Label("Desconectar", systemImage: "rectangle.portrait.and.arrow.right")
-                    .labelStyle(.iconOnly)
-            }
-            .disabled(connectionStore.active == nil)
-            .help("Olvidar la conexión activa y sus credenciales")
-            .confirmationDialog(
-                "¿Desconectar esta conexión?",
-                isPresented: $showDisconnectConfirm,
-                titleVisibility: .visible
-            ) {
-                Button("Desconectar", role: .destructive) { disconnectActive() }
-                Button("Cancelar", role: .cancel) {}
-            } message: {
-                Text("Se olvidan sus credenciales guardadas. Tendrás que volver a capturarlas si quieres reconectarte a esta cuenta o bucket.")
-            }
-
-            Spacer()
-
-            Button {
-                openWindow(id: "history")
-            } label: {
-                Label("Historial de operaciones", systemImage: "clock.arrow.circlepath")
-                    .labelStyle(.iconOnly)
-            }
-            .help("Historial de operaciones")
-
-            // ponytail: plain Picker writing straight to the @AppStorage key is all the
-            // "language switcher" needs — BackBlaze2SyncApp reads the same key and re-applies
-            // .environment(\.locale) on change, so no extra plumbing lives here.
-            Picker("", selection: $appLanguageCode) {
-                Text("🇲🇽 ES").tag("es")
-                Text("🇺🇸 EN").tag("en")
-                Text("🇵🇹 PT").tag("pt")
-                Text("🇫🇷 FR").tag("fr")
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .frame(width: 78)
-            .help("Idioma")
         }
     }
 

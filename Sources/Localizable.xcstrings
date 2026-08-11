@@ -2525,6 +2525,14 @@
         }
       }
     },
+    "Ir a la raíz del bucket": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Go to bucket root" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ir a la raíz del bucket" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aller à la racine du bucket" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Ir para a raiz do bucket" } }
+      }
+    },
     "Ir": {
       "localizations": {
         "en": {
@@ -3589,6 +3597,94 @@
         }
       }
     },
+    "Nueva carpeta… (⌘⇧N)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "New folder… (⌘⇧N)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Nueva carpeta… (⌘⇧N)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nouveau dossier… (⌘⇧N)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Nova pasta… (⌘⇧N)" } }
+      }
+    },
+    "Renombrar… (Return)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rename… (Return)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Renombrar… (Return)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Renommer… (Retour)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Renomear… (Enter)" } }
+      }
+    },
+    "Copiar ruta (⌘⌥C)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Copy path (⌘⌥C)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Copiar ruta (⌘⌥C)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Copier le chemin (⌘⌥C)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Copiar caminho (⌘⌥C)" } }
+      }
+    },
+    "Descargar (⌘D)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Download (⌘D)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Descargar (⌘D)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Télécharger (⌘D)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Baixar (⌘D)" } }
+      }
+    },
+    "Descargar a… (⌘⇧D)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Download to… (⌘⇧D)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Descargar a… (⌘⇧D)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Télécharger vers… (⌘⇧D)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Baixar para… (⌘⇧D)" } }
+      }
+    },
+    "Vista previa (Espacio)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Quick Look (Space)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Vista previa (Espacio)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aperçu rapide (Espace)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Visualização rápida (Espaço)" } }
+      }
+    },
+    "Generar URL para compartir… (⌘L)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Generate share URL… (⌘L)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Generar URL para compartir… (⌘L)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Générer une URL de partage… (⌘L)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Gerar URL para compartilhar… (⌘L)" } }
+      }
+    },
+    "Subir archivo… (⌘U)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload file… (⌘U)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Subir archivo… (⌘U)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Envoyer un fichier… (⌘U)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Enviar arquivo… (⌘U)" } }
+      }
+    },
+    "Subir carpeta… (⌘⇧U)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload folder… (⌘⇧U)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Subir carpeta… (⌘⇧U)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Envoyer un dossier… (⌘⇧U)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Enviar pasta… (⌘⇧U)" } }
+      }
+    },
+    "Mostrar información de carpeta (⌘I)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show folder info (⌘I)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Mostrar información de carpeta (⌘I)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher les informations du dossier (⌘I)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Mostrar informações da pasta (⌘I)" } }
+      }
+    },
+    "Mostrar información de archivo (⌘I)": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show file info (⌘I)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Mostrar información de archivo (⌘I)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher les informations du fichier (⌘I)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Mostrar informações do arquivo (⌘I)" } }
+      }
+    },
     "Nueva carpeta…": {
       "localizations": {
         "en": {
@@ -4063,6 +4159,14 @@
             "value": "Sem resultados para \"%@\"."
           }
         }
+      }
+    },
+    "Subir archivo o carpeta a esta ubicación": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Upload a file or folder to this location" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Subir archivo o carpeta a esta ubicación" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Envoyer un fichier ou un dossier à cet emplacement" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Enviar um arquivo ou pasta para este local" } }
       }
     },
     "Subir archivo…": {

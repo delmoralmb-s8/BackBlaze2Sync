@@ -350,7 +350,8 @@ struct ExplorerView: View {
         let withLifecycle = applyLifecycleHandlers(to: mainContent)
         let withCore = applyCoreDialogs(to: withLifecycle)
         let withSheets = applySheetsAndVerify(to: withCore)
-        return applyTransferDialogs(to: withSheets)
+        let withTransfers = applyTransferDialogs(to: withSheets)
+        return withTransfers.background(keyboardShortcutButtons)
     }
 
     private var mainContent: some View {
@@ -363,17 +364,32 @@ struct ExplorerView: View {
                 Button { goBack() } label: { Image(systemName: "chevron.left") }
                     .disabled(backStack.isEmpty)
                     .help("Atrás")
+                    .keyboardShortcut("[", modifiers: .command)
                 Button { goForward() } label: { Image(systemName: "chevron.right") }
                     .disabled(forwardStack.isEmpty)
                     .help("Adelante")
+                    .keyboardShortcut("]", modifiers: .command)
                 Button { navigateUp() } label: { Image(systemName: "arrow.up") }
                     .disabled(browsePath.isEmpty)
                     .help("Subir un nivel")
+                    .keyboardShortcut(.upArrow, modifiers: .command)
                 Button { refreshCurrentFolder() } label: { Image(systemName: "arrow.clockwise") }
                     .disabled(rclone.isListingRemote || rclone.isRunning)
                     .help("Actualizar esta carpeta")
+                    .keyboardShortcut("r", modifiers: .command)
+                Button { goTo("") } label: { Image(systemName: "house") }
+                    .disabled(browsePath.isEmpty)
+                    .keyboardShortcut("h", modifiers: [.command, .shift])
+                    .help("Ir a la raíz del bucket")
 
-                pathMenu(current: browsePath) { newPath in goTo(newPath) }
+                Menu {
+                    Button("Subir archivo… (⌘U)") { uploadFiles(into: fullBrowsePath) }
+                    Button("Subir carpeta… (⌘⇧U)") { uploadFolder(into: fullBrowsePath) }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(rclone.isRunning)
+                .help("Subir archivo o carpeta a esta ubicación")
 
                 searchBar
 
@@ -399,6 +415,11 @@ struct ExplorerView: View {
                     Label("Nueva carpeta…", systemImage: "folder.badge.plus")
                 }
                 .disabled(rclone.isRunning)
+            }
+
+            HStack {
+                pathMenu(current: browsePath) { newPath in goTo(newPath) }
+                Spacer()
             }
 
             HStack {
@@ -430,6 +451,7 @@ struct ExplorerView: View {
                         .help(currentFolderHasImages ? LocalizedStringKey("Ver las imágenes de esta carpeta") : LocalizedStringKey("Esta carpeta no tiene imágenes"))
                     if !selectedPaths.isEmpty {
                         Button("Deseleccionar") { selectedPaths.removeAll() }
+                            .keyboardShortcut(.escape, modifiers: [])
                     }
                     if viewMode == .list && currentFolderHasSubfolders {
                         Button(LocalizedStringKey(topLevelExpanded ? "Colapsar todo" : "Expandir todo")) {
@@ -449,9 +471,12 @@ struct ExplorerView: View {
                 HStack {
                     Button("Mover selección…") { openTransferSheet(.move) }
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)
+                        .keyboardShortcut("m", modifiers: [.command, .shift])
                     Button("Copiar selección…") { openTransferSheet(.copy) }
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)
+                        .keyboardShortcut("c", modifiers: [.command, .shift])
                     Button("Borrar seleccionados (\(selectedPaths.count))") { showDeleteConfirm = true }
+                        .keyboardShortcut(.delete, modifiers: .command)
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)
                         .tint(.red)
                     Spacer()
@@ -1081,39 +1106,46 @@ struct ExplorerView: View {
     private func contextMenuItems(clicked: RemotePathItem) -> some View {
         let targets = selectedPaths.contains(clicked.path) ? selectedItems : [clicked]
 
+        // The shortcut hints below are text, not real `.keyboardShortcut()` bindings — a native
+        // contextual NSMenu's key equivalents only ever fire while that specific menu is open on
+        // screen, never as an app-wide shortcut. Attaching them here looked right but didn't
+        // actually make Return/Space/⌘⇧N work outside the open menu, and worse, having the same
+        // shortcut declared once per visible row risked SwiftUI treating it as ambiguous and
+        // firing NONE of them. The real, working bindings live in `keyboardShortcutButtons`
+        // below, which act on the current selection regardless of any menu.
         Button {
             newFolderTarget = .explorer
             newFolderName = ""
             showNewFolderPrompt = true
         } label: {
-            Label("Nueva carpeta…", systemImage: "folder.badge.plus")
+            Label("Nueva carpeta… (⌘⇧N)", systemImage: "folder.badge.plus")
         }
 
-        Button("Renombrar…") {
+        Button("Renombrar… (Return)") {
             renameTarget = clicked
             renameNewName = clicked.name
             showRenamePrompt = true
         }
 
-        Button("Copiar ruta") {
+        Button("Copiar ruta (⌘⌥C)") {
             copyToPasteboard(targets.map(\.path).joined(separator: "\n"))
         }
 
         Divider()
 
-        Button("Descargar") { downloadDefault(targets) }
-        Button("Descargar a…") { downloadChoosingFolder(targets) }
+        Button("Descargar (⌘D)") { downloadDefault(targets) }
+        Button("Descargar a… (⌘⇧D)") { downloadChoosingFolder(targets) }
 
         if !clicked.isDir {
             // No extension whitelist on purpose — Quick Look itself already knows what it can
             // and can't render (same as pressing Space in Finder on any file), so gating this on
             // a hand-maintained list of extensions would just be a second, incomplete copy of
             // that same knowledge.
-            Button("Vista previa") { previewFile(clicked) }
+            Button("Vista previa (Espacio)") { previewFile(clicked) }
         }
 
         if !clicked.isDir {
-            Button("Generar URL para compartir…") {
+            Button("Generar URL para compartir… (⌘L)") {
                 shareItem = clicked
                 shareViewLink = nil
                 shareDownloadLink = nil
@@ -1135,12 +1167,12 @@ struct ExplorerView: View {
 
         Divider()
 
-        Button("Subir archivo…") { uploadFiles(into: clicked.isDir ? clicked.path : fullBrowsePath) }
-        Button("Subir carpeta…") { uploadFolder(into: clicked.isDir ? clicked.path : fullBrowsePath) }
+        Button("Subir archivo… (⌘U)") { uploadFiles(into: clicked.isDir ? clicked.path : fullBrowsePath) }
+        Button("Subir carpeta… (⌘⇧U)") { uploadFolder(into: clicked.isDir ? clicked.path : fullBrowsePath) }
 
         Divider()
 
-        Button(LocalizedStringKey(clicked.isDir ? "Mostrar información de carpeta" : "Mostrar información de archivo")) {
+        Button(LocalizedStringKey(clicked.isDir ? "Mostrar información de carpeta (⌘I)" : "Mostrar información de archivo (⌘I)")) {
             showInfo(for: clicked)
         }
         Button("Verificar integridad…") { startVerify(clicked) }
@@ -2029,6 +2061,95 @@ struct ExplorerView: View {
         } else {
             selectedPaths.formUnion(topLevelPaths)
         }
+    }
+
+    /// Unconditional version of the toggle above, for ⌘A — pressing "select all" again while
+    /// everything is already selected should stay a no-op, never flip into deselecting.
+    private func selectAllTopLevel() {
+        selectedPaths.formUnion(rclone.remoteEntries.map { fullPath(for: $0, parent: fullBrowsePath) })
+    }
+
+    // MARK: - Keyboard shortcuts (act on the current selection, same as Finder — no menu needs
+    // to be open). Each guards its own precondition (single item, non-empty selection, etc.) so
+    // the shortcut is simply a no-op when it doesn't apply, instead of needing `.disabled` logic
+    // wired up for a button nobody sees.
+
+    private func shortcutPreview() {
+        guard selectedItems.count == 1, let item = selectedItems.first, !item.isDir else { return }
+        previewFile(item)
+    }
+
+    private func shortcutRename() {
+        guard selectedItems.count == 1, let item = selectedItems.first else { return }
+        renameTarget = item
+        renameNewName = item.name
+        showRenamePrompt = true
+    }
+
+    private func shortcutCopyPath() {
+        guard !selectedItems.isEmpty else { return }
+        copyToPasteboard(selectedItems.map(\.path).joined(separator: "\n"))
+    }
+
+    private func shortcutShowInfo() {
+        guard selectedItems.count == 1, let item = selectedItems.first else { return }
+        showInfo(for: item)
+    }
+
+    private func shortcutDownload() {
+        guard !selectedItems.isEmpty else { return }
+        downloadDefault(selectedItems)
+    }
+
+    private func shortcutDownloadChoosing() {
+        guard !selectedItems.isEmpty else { return }
+        downloadChoosingFolder(selectedItems)
+    }
+
+    private func shortcutShareLink() {
+        guard selectedItems.count == 1, let item = selectedItems.first, !item.isDir else { return }
+        shareItem = item
+        shareViewLink = nil
+        shareDownloadLink = nil
+        viewLinkCopied = false
+        downloadLinkCopied = false
+        downloadCredAccountID = ""
+        downloadCredAppKey = ""
+        shareDurationDays = 7
+        shareLinkErrorMessage = nil
+        isGeneratingViewLink = false
+        isGeneratingDownloadLink = false
+        showShareSheet = true
+    }
+
+    /// Invisible buttons — `.keyboardShortcut` needs an actual view in the hierarchy to bind to,
+    /// but there's no matching visible button for these (they only otherwise exist inside the
+    /// right-click menu). `.hidden()` keeps them out of layout/sight while keeping the shortcut live.
+    private var keyboardShortcutButtons: some View {
+        // Split into two Groups — SwiftUI's ViewBuilder only synthesizes buildBlock up to 10
+        // children per block, and this needs 11 buttons.
+        Group {
+            Group {
+                Button("") {
+                    newFolderTarget = .explorer
+                    newFolderName = ""
+                    showNewFolderPrompt = true
+                }.keyboardShortcut("n", modifiers: [.command, .shift])
+                Button("", action: shortcutPreview).keyboardShortcut(.space, modifiers: [])
+                Button("", action: shortcutRename).keyboardShortcut(.return, modifiers: [])
+                Button("", action: shortcutCopyPath).keyboardShortcut("c", modifiers: [.command, .option])
+                Button("", action: shortcutShowInfo).keyboardShortcut("i", modifiers: .command)
+            }
+            Group {
+                Button("", action: shortcutDownload).keyboardShortcut("d", modifiers: .command)
+                Button("", action: shortcutDownloadChoosing).keyboardShortcut("d", modifiers: [.command, .shift])
+                Button("") { uploadFiles(into: fullBrowsePath) }.keyboardShortcut("u", modifiers: .command)
+                Button("") { uploadFolder(into: fullBrowsePath) }.keyboardShortcut("u", modifiers: [.command, .shift])
+                Button("", action: shortcutShareLink).keyboardShortcut("l", modifiers: .command)
+                Button("", action: selectAllTopLevel).keyboardShortcut("a", modifiers: .command)
+            }
+        }
+        .hidden()
     }
 
     // MARK: - Formatting
