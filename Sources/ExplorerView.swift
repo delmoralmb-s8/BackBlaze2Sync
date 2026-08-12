@@ -391,7 +391,7 @@ struct ExplorerView: View {
                     Button("Subir archivo… (⌘U)") { uploadFiles(into: fullBrowsePath) }
                     Button("Subir carpeta… (⌘⇧U)") { uploadFolder(into: fullBrowsePath) }
                 } label: {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: "icloud.and.arrow.up")
                 }
                 .disabled(rclone.isRunning)
                 .help("Subir archivo o carpeta a esta ubicación")
