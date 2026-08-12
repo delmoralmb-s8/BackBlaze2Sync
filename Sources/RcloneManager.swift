@@ -115,6 +115,10 @@ final class RcloneManager: ObservableObject {
     @Published var isListingPicker = false
     @Published var verifyAfterUpload = false
     @Published var verifyStatusMessage: String?
+    // Kept separate from the message text itself instead of sniffing an emoji prefix out of a
+    // string — the view renders the real success/fail state as a native SF Symbol, not a glyph
+    // baked into the text.
+    @Published var verifyStatusSuccess = false
     @Published private(set) var history: [OperationRecord] = []
     @Published private(set) var failedOperations: [FailedOperation] = []
     /// The Explorer's current relative browse path, mirrored here so a new Gallery window can
@@ -146,7 +150,7 @@ final class RcloneManager: ObservableObject {
         let key = "\(context)|\(errorText)"
         guard key != lastBackgroundErrorLogged else { return }
         lastBackgroundErrorLogged = key
-        log("❌ \(context): \(errorText)")
+        log("\(context): \(errorText)")
     }
     private var process: Process?
     private let historyKey = "b2sync.history.v1"
@@ -302,7 +306,7 @@ final class RcloneManager: ObservableObject {
         log("Verificando integridad (rclone check)…")
         run(arguments: ["check", source, destination]) { [weak self] success in
             guard let self else { return }
-            self.log(success ? "✅ Verificación OK: no se encontraron diferencias." : "⚠️ Verificación encontró diferencias, revisa el log.")
+            self.log(success ? "Verificación OK: no se encontraron diferencias." : "Verificación encontró diferencias, revisa el log.")
             self.lastResult = success ? "success" : "error"
         }
     }
@@ -345,7 +349,7 @@ final class RcloneManager: ObservableObject {
         guard !trimmed.isEmpty, !accountID.isEmpty, !appKey.isEmpty else { completion(false); return }
         log("Creando conexión rclone: \(trimmed)")
         run(arguments: ["config", "create", trimmed, "b2", "account=\(accountID)", "key=\(appKey)"]) { [weak self] success in
-            self?.log(success ? "✅ Conexión creada." : "❌ No se pudo crear la conexión (revisa las credenciales).")
+            self?.log(success ? "Conexión creada." : "No se pudo crear la conexión (revisa las credenciales).")
             completion(success)
         }
     }
@@ -420,7 +424,7 @@ final class RcloneManager: ObservableObject {
             if ok {
                 self.log("Listados \(entries.count) elemento(s) en \(path)")
             } else {
-                self.log("❌ No se pudo listar \(path)" + (errorText.map { ": \($0)" } ?? ""))
+                self.log("No se pudo listar \(path)" + (errorText.map { ": \($0)" } ?? ""))
             }
         }
     }
@@ -436,7 +440,7 @@ final class RcloneManager: ObservableObject {
             if ok {
                 self?.listCache[path] = (entries, Date())
             } else if let errorText {
-                self?.log("❌ No se pudo listar \(path): \(errorText)")
+                self?.log("No se pudo listar \(path): \(errorText)")
             }
             completion(entries)
         }
@@ -472,12 +476,12 @@ final class RcloneManager: ObservableObject {
                 self?.shareLinkProcess = nil
                 let link = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 if proc.terminationStatus == 0, let link, !link.isEmpty {
-                    self?.log("✅ URL para compartir generada (\(expireDays) día(s)).")
+                    self?.log("URL para compartir generada (\(expireDays) día(s)).")
                     completion(link)
                 } else {
                     let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                     let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
-                    self?.log("❌ No se pudo generar la URL para compartir\(suffix)")
+                    self?.log("No se pudo generar la URL para compartir\(suffix)")
                     completion(nil)
                 }
             }
@@ -487,7 +491,7 @@ final class RcloneManager: ObservableObject {
             try task.run()
         } catch {
             shareLinkProcess = nil
-            log("❌ No se pudo ejecutar rclone: \(error.localizedDescription)")
+            log("No se pudo ejecutar rclone: \(error.localizedDescription)")
             completion(nil)
         }
     }
@@ -580,7 +584,7 @@ final class RcloneManager: ObservableObject {
         do {
             try task.run()
         } catch {
-            log("❌ No se pudo buscar: \(error.localizedDescription)")
+            log("No se pudo buscar: \(error.localizedDescription)")
             completion([])
             return
         }
@@ -602,7 +606,7 @@ final class RcloneManager: ObservableObject {
                 if decoded == nil, task.terminationStatus != 0, task.terminationReason != .uncaughtSignal {
                     let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                     let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
-                    self.log("❌ No se pudo buscar\(suffix)")
+                    self.log("No se pudo buscar\(suffix)")
                 } else if decoded != nil {
                     self.searchIndex = (basePath: basePath, entries: indexed, date: Date())
                 }
@@ -744,7 +748,7 @@ final class RcloneManager: ObservableObject {
         invalidateCache(path: basePath)
         log("Creando carpeta: \(full)")
         run(arguments: ["touch", marker]) { [weak self] success in
-            self?.log(success ? "✅ Carpeta creada." : "❌ No se pudo crear la carpeta.")
+            self?.log(success ? "Carpeta creada." : "No se pudo crear la carpeta.")
             completion(success)
         }
     }
@@ -760,7 +764,7 @@ final class RcloneManager: ObservableObject {
         }
         log("Borrando \(items.count) elemento(s) de B2…")
         deleteSequential(items.map { (path: $0.path, isDir: $0.isDir) }) { [weak self] success in
-            self?.log(success ? "✅ Borrado completado." : "❌ Hubo errores al borrar algunos elementos.")
+            self?.log(success ? "Borrado completado." : "Hubo errores al borrar algunos elementos.")
             self?.lastResult = success ? "success" : "error"
             self?.recordOperation(
                 type: "Borrar",
@@ -778,7 +782,7 @@ final class RcloneManager: ObservableObject {
         let rest = Array(items.dropFirst())
         let args = first.isDir ? ["purge", first.path] : ["deletefile", first.path]
         run(arguments: args) { [weak self] success in
-            self?.log(success ? "🗑️ Borrado: \(first.path)" : "❌ No se pudo borrar: \(first.path)")
+            self?.log(success ? "Borrado: \(first.path)" : "No se pudo borrar: \(first.path)")
             self?.deleteSequential(rest, allSucceeded: allSucceeded && success, onDone: onDone)
         }
     }
@@ -798,7 +802,7 @@ final class RcloneManager: ObservableObject {
             self.startBatch(itemBytes: sizes)
             self.moveSequential(pairs) { success in
                 self.endBatch()
-                self.log(success ? "✅ Movido correctamente." : "❌ Hubo errores moviendo algunos elementos.")
+                self.log(success ? "Movido correctamente." : "Hubo errores moviendo algunos elementos.")
                 self.lastResult = success ? "success" : "error"
                 self.recordOperation(type: "Mover", fileCount: pairs.count, success: success)
                 if !success && trackFailure {
@@ -820,7 +824,7 @@ final class RcloneManager: ObservableObject {
         invalidateCache(path: Self.parentPath(of: item.path))
         log("Renombrando \(item.name) → \(trimmed)")
         moveOneStaged(from: item.path, to: newPath, isDir: item.isDir) { [weak self] success in
-            self?.log(success ? "✅ Renombrado." : "❌ No se pudo renombrar.")
+            self?.log(success ? "Renombrado." : "No se pudo renombrar.")
             self?.lastResult = success ? "success" : "error"
             completion(success)
         }
@@ -831,7 +835,7 @@ final class RcloneManager: ObservableObject {
         let rest = Array(items.dropFirst())
         moveOneStaged(from: first.from, to: first.to, isDir: first.isDir) { [weak self] success in
             guard let self else { return }
-            self.log(success ? "➡️ Movido: \(first.from)" : "❌ No se pudo mover: \(first.from)")
+            self.log(success ? "Movido: \(first.from)" : "No se pudo mover: \(first.from)")
             self.advanceBatch()
             self.moveSequential(rest, allSucceeded: allSucceeded && success, onDone: onDone)
         }
@@ -860,14 +864,14 @@ final class RcloneManager: ObservableObject {
         run(arguments: [subcommand, from, temp, "--progress", "--stats", "1s"]) { [weak self] success in
             guard let self else { completion(false); return }
             guard success else {
-                self.log("❌ Falló el primer paso del movimiento, nada se perdió (\(from) intacto).")
+                self.log("Falló el primer paso del movimiento, nada se perdió (\(from) intacto).")
                 completion(false)
                 return
             }
             if self.batch == nil { self.percent = 0; self.speed = ""; self.eta = "" }
             self.run(arguments: [subcommand, temp, to, "--progress", "--stats", "1s"]) { success2 in
                 if !success2 {
-                    self.log("⚠️ El segundo paso falló, revisa \(temp) manualmente, ahí quedaron los archivos.")
+                    self.log("El segundo paso falló, revisa \(temp) manualmente, ahí quedaron los archivos.")
                 }
                 completion(success2)
             }
@@ -908,7 +912,7 @@ final class RcloneManager: ObservableObject {
             self.startBatch(itemBytes: sizes)
             self.transferSequential(pairs) { success in
                 self.endBatch()
-                self.log(success ? "✅ Copiado completo." : "❌ Hubo errores al copiar.")
+                self.log(success ? "Copiado completo." : "Hubo errores al copiar.")
                 self.lastResult = success ? "success" : "error"
                 self.recordOperation(type: "Copiar", fileCount: pairs.count, success: success)
                 if !success && trackFailure {
@@ -933,7 +937,7 @@ final class RcloneManager: ObservableObject {
             self.startBatch(itemBytes: sizes)
             self.transferSequential(pairs) { success in
                 self.endBatch()
-                self.log(success ? "✅ Descarga completa." : "❌ Hubo errores al descargar.")
+                self.log(success ? "Descarga completa." : "Hubo errores al descargar.")
                 self.lastResult = success ? "success" : "error"
                 if recordHistory {
                     let entries = pairs.flatMap { Self.fileEntries(localPath: $0.to) }
@@ -976,7 +980,7 @@ final class RcloneManager: ObservableObject {
         transferSequential(pairs) { [weak self] success in
             guard let self else { completion(success); return }
             self.endBatch()
-            self.log(success ? "✅ Subida completa." : "❌ Hubo errores al subir.")
+            self.log(success ? "Subida completa." : "Hubo errores al subir.")
             self.lastResult = success ? "success" : "error"
             if recordHistory {
                 let entries = pairs.flatMap { Self.fileEntries(localPath: $0.from) }
@@ -1032,7 +1036,7 @@ final class RcloneManager: ObservableObject {
         do {
             try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         } catch {
-            log("❌ No se pudo crear una carpeta temporal para comprimir: \(error.localizedDescription)")
+            log("No se pudo crear una carpeta temporal para comprimir: \(error.localizedDescription)")
             fail()
             return
         }
@@ -1041,7 +1045,7 @@ final class RcloneManager: ObservableObject {
         downloadItems([item], toLocalFolder: tempDir, recordHistory: false, trackFailure: false) { [weak self] downloadOK in
             guard let self else { completion(false); return }
             guard downloadOK else {
-                self.log("❌ Falló la descarga temporal, no se generó el .zip.")
+                self.log("Falló la descarga temporal, no se generó el .zip.")
                 try? FileManager.default.removeItem(atPath: tempDir)
                 self.recordOperation(type: "Comprimir", fileCount: 0, success: false)
                 fail()
@@ -1056,7 +1060,7 @@ final class RcloneManager: ObservableObject {
             self.zipFolder(at: localFolder, to: zipPath) { [weak self] zipOK in
                 guard let self else { completion(false); return }
                 guard zipOK else {
-                    self.log("❌ No se pudo comprimir la carpeta.")
+                    self.log("No se pudo comprimir la carpeta.")
                     try? FileManager.default.removeItem(atPath: tempDir)
                     self.recordOperation(type: "Comprimir", fileCount: originalEntries.count, success: false, bytesBefore: bytesBefore, items: originalEntries)
                     fail()
@@ -1066,7 +1070,7 @@ final class RcloneManager: ObservableObject {
                 self.log("Subiendo \(item.name).zip…")
                 self.uploadLocalPaths([zipPath], toRemoteFolder: destFolder, recordHistory: false, trackFailure: false) { uploadOK in
                     try? FileManager.default.removeItem(atPath: tempDir)
-                    self.log(uploadOK ? "✅ \(item.name).zip subido." : "❌ No se pudo subir el .zip.")
+                    self.log(uploadOK ? "\(item.name).zip subido." : "No se pudo subir el .zip.")
                     self.recordOperation(type: "Comprimir", fileCount: originalEntries.count, success: uploadOK, bytes: zipBytes, bytesBefore: bytesBefore, items: originalEntries)
                     if uploadOK {
                         completion(true)
@@ -1107,7 +1111,7 @@ final class RcloneManager: ObservableObject {
         do {
             try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         } catch {
-            log("❌ No se pudo crear una carpeta temporal: \(error.localizedDescription)")
+            log("No se pudo crear una carpeta temporal: \(error.localizedDescription)")
             completion(false)
             return
         }
@@ -1116,7 +1120,7 @@ final class RcloneManager: ObservableObject {
         downloadItems([item], toLocalFolder: tempDir, recordHistory: false, trackFailure: false) { [weak self] downloadOK in
             guard let self else { completion(false); return }
             guard downloadOK else {
-                self.log("❌ Falló la descarga, no se generó el .zip.")
+                self.log("Falló la descarga, no se generó el .zip.")
                 try? FileManager.default.removeItem(atPath: tempDir)
                 completion(false)
                 return
@@ -1126,7 +1130,7 @@ final class RcloneManager: ObservableObject {
                 guard let self else { completion(false); return }
                 defer { try? FileManager.default.removeItem(atPath: tempDir) }
                 guard zipOK else {
-                    self.log("❌ No se pudo comprimir la carpeta.")
+                    self.log("No se pudo comprimir la carpeta.")
                     completion(false)
                     return
                 }
@@ -1135,10 +1139,10 @@ final class RcloneManager: ObservableObject {
                         try FileManager.default.removeItem(atPath: finalZipPath)
                     }
                     try FileManager.default.moveItem(atPath: zipPath, toPath: finalZipPath)
-                    self.log("✅ \(item.name).zip guardado en Descargas.")
+                    self.log("\(item.name).zip guardado en Descargas.")
                     completion(true)
                 } catch {
-                    self.log("❌ No se pudo mover el .zip a Descargas: \(error.localizedDescription)")
+                    self.log("No se pudo mover el .zip a Descargas: \(error.localizedDescription)")
                     completion(false)
                 }
             }
@@ -1149,9 +1153,10 @@ final class RcloneManager: ObservableObject {
 
     private func verifySizes(pairs: [(from: String, to: String)], index: Int = 0, okCount: Int = 0, failures: [String] = [], completion: @escaping () -> Void) {
         guard index < pairs.count else {
+            verifyStatusSuccess = failures.isEmpty
             verifyStatusMessage = failures.isEmpty
-                ? "✅ Archivos subidos correctamente \(okCount)/\(pairs.count)"
-                : "⚠️ Diferencia de tamaño en \(failures.count)/\(pairs.count): " + failures.joined(separator: "; ")
+                ? "Archivos subidos correctamente \(okCount)/\(pairs.count)"
+                : "Diferencia de tamaño en \(failures.count)/\(pairs.count): " + failures.joined(separator: "; ")
             completion()
             return
         }
@@ -1403,7 +1408,7 @@ final class RcloneManager: ObservableObject {
         let excludeArgs = first.isDir ? Self.macJunkExcludeArgs : []
         run(arguments: [subcommand, first.from, first.to, "--progress", "--stats", "1s"] + excludeArgs) { [weak self] success in
             guard let self else { return }
-            self.log(success ? "➡️ \(first.from) → \(first.to)" : "❌ Falló: \(first.from)")
+            self.log(success ? "\(first.from) → \(first.to)" : "Falló: \(first.from)")
             self.advanceBatch()
             self.transferSequential(rest, allSucceeded: allSucceeded && success, onDone: onDone)
         }
@@ -1459,7 +1464,7 @@ final class RcloneManager: ObservableObject {
             try task.run()
         } catch {
             isRunning = false
-            log("❌ No se pudo ejecutar rclone: \(error.localizedDescription)")
+            log("No se pudo ejecutar rclone: \(error.localizedDescription)")
             completion(false)
         }
     }

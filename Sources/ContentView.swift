@@ -73,12 +73,17 @@ struct ContentView: View {
                     }
 
                     if let status = rclone.verifyStatusMessage {
-                        Text(status)
-                            .font(.callout)
-                            .padding(8)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(status.hasPrefix("✅") ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        Label {
+                            Text(status)
+                        } icon: {
+                            Image(systemName: rclone.verifyStatusSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundStyle(rclone.verifyStatusSuccess ? .green : .orange)
+                        }
+                        .font(.callout)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(rclone.verifyStatusSuccess ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
 
                     Divider()
@@ -316,10 +321,10 @@ struct ContentView: View {
                 // "language switcher" needs — BackBlaze2SyncApp reads the same key and re-applies
                 // .environment(\.locale) on change, so no extra plumbing lives here.
                 Picker("", selection: $appLanguageCode) {
-                    Text("🇲🇽 ES").tag("es")
-                    Text("🇺🇸 EN").tag("en")
-                    Text("🇵🇹 PT").tag("pt")
-                    Text("🇫🇷 FR").tag("fr")
+                    Text("ES").tag("es")
+                    Text("EN").tag("en")
+                    Text("PT").tag("pt")
+                    Text("FR").tag("fr")
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()
