@@ -42,10 +42,11 @@ struct RemoteEntryDetail: Codable {
 
 /// A remote file/folder addressed by its full path (e.g. "b2:mybucket/books/foo.epub"),
 /// used once an item is selected — independent of which listing (flat or nested) produced it.
-struct RemotePathItem: Hashable {
+struct RemotePathItem: Hashable, Identifiable {
     let path: String
     let name: String
     let isDir: Bool
+    var id: String { path }
 }
 
 struct FolderSizeInfo {

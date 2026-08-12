@@ -250,7 +250,6 @@ struct ExplorerView: View {
     @State private var renameTarget: RemotePathItem?
     @State private var renameNewName = ""
 
-    @State private var showInfoSheet = false
     @State private var infoItem: RemotePathItem?
     @State private var infoFolderSize: FolderSizeInfo?
     @State private var isLoadingInfoSize = false
@@ -580,7 +579,7 @@ struct ExplorerView: View {
     private func applySheetsAndVerify(to content: some View) -> some View {
         content
             .sheet(isPresented: $showTransferSheet) { transferSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
-            .sheet(isPresented: $showInfoSheet) { infoSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
+            .sheet(item: $infoItem) { item in infoSheet(for: item).environment(\.locale, Locale(identifier: appLanguageCode)) }
             .sheet(isPresented: $showShareSheet) { shareSheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
             .sheet(isPresented: $showVerifySheet) { verifySheet.environment(\.locale, Locale(identifier: appLanguageCode)) }
             .alert("Nombre(s) de archivo(s) no son idénticos, ¿quieres continuar?", isPresented: $showVerifyNameMismatchAlert) {
@@ -1423,16 +1422,8 @@ struct ExplorerView: View {
     }
 
     private func showInfo(for item: RemotePathItem) {
-        infoItem = item
         infoFolderSize = nil
         infoDetail = nil
-        // Deferred: flipping a @Published/@State sheet flag synchronously inside a .contextMenu
-        // Button action can silently fail to present on macOS — the NSMenu's tracking session
-        // hasn't fully torn down yet. Every other menu action that reaches a sheet/panel either
-        // blocks on a modal (NSOpenPanel in "Verificar integridad…") or goes through an .alert
-        // instead, which is why only this one (and "Generar URL para compartir…", same shape)
-        // needs the explicit next-runloop-tick dispatch.
-        DispatchQueue.main.async { showInfoSheet = true }
         if item.isDir {
             isLoadingInfoSize = true
             rclone.folderSize(path: item.path) { size in
@@ -1446,45 +1437,52 @@ struct ExplorerView: View {
                 isLoadingInfoDetail = false
             }
         }
+        // Deferred: assigning straight into a @State value synchronously inside a .contextMenu
+        // Button action can fail to actually trigger presentation on macOS — the right-click
+        // menu's own tracking session hasn't fully torn down yet. Every other menu action that
+        // reaches a sheet/panel either blocks on a modal (NSOpenPanel in "Verificar integridad…")
+        // or goes through an .alert instead, which is why only this one (and "Generar URL para
+        // compartir…", same shape) needs the explicit next-runloop-tick dispatch. Using
+        // `.sheet(item:)` bound directly to `infoItem` (instead of a separate isPresented flag)
+        // also means there's no longer any way for the sheet to present with stale/nil data.
+        DispatchQueue.main.async { infoItem = item }
     }
 
-    private var infoSheet: some View {
+    private func infoSheet(for item: RemotePathItem) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let item = infoItem {
-                Text(item.name).font(.headline)
-                Divider()
-                LabeledContent("Ruta", value: item.path)
-                LabeledContent("Tipo", value: item.isDir ? String(localized: "Carpeta") : String(localized: "Archivo"))
-                if item.isDir {
-                    if isLoadingInfoSize {
-                        ProgressView().controlSize(.small)
-                    } else if let size = infoFolderSize {
-                        LabeledContent("Elementos", value: "\(size.count)")
-                        LabeledContent("Tamaño total", value: formattedSize(size.bytes))
-                    } else {
-                        Text("No se pudo calcular el tamaño.").font(.caption).foregroundStyle(.secondary)
-                    }
-                } else if isLoadingInfoDetail {
+            Text(item.name).font(.headline)
+            Divider()
+            LabeledContent("Ruta", value: item.path)
+            LabeledContent("Tipo", value: item.isDir ? String(localized: "Carpeta") : String(localized: "Archivo"))
+            if item.isDir {
+                if isLoadingInfoSize {
                     ProgressView().controlSize(.small)
-                } else if let detail = infoDetail {
-                    LabeledContent("Tamaño", value: formattedSize(detail.Size))
-                    LabeledContent("Modificado", value: formattedModTime(detail.ModTime))
-                    if let mime = detail.MimeType, !mime.isEmpty {
-                        LabeledContent("Tipo MIME", value: mime)
-                    }
-                    if let hashes = detail.Hashes {
-                        ForEach(hashes.keys.sorted(), id: \.self) { hashType in
-                            LabeledContent(hashType.uppercased(), value: hashes[hashType] ?? "")
-                                .textSelection(.enabled)
-                        }
-                    }
+                } else if let size = infoFolderSize {
+                    LabeledContent("Elementos", value: "\(size.count)")
+                    LabeledContent("Tamaño total", value: formattedSize(size.bytes))
                 } else {
-                    Text("No se pudo obtener la información de rclone.").font(.caption).foregroundStyle(.secondary)
+                    Text("No se pudo calcular el tamaño.").font(.caption).foregroundStyle(.secondary)
                 }
+            } else if isLoadingInfoDetail {
+                ProgressView().controlSize(.small)
+            } else if let detail = infoDetail {
+                LabeledContent("Tamaño", value: formattedSize(detail.Size))
+                LabeledContent("Modificado", value: formattedModTime(detail.ModTime))
+                if let mime = detail.MimeType, !mime.isEmpty {
+                    LabeledContent("Tipo MIME", value: mime)
+                }
+                if let hashes = detail.Hashes {
+                    ForEach(hashes.keys.sorted(), id: \.self) { hashType in
+                        LabeledContent(hashType.uppercased(), value: hashes[hashType] ?? "")
+                            .textSelection(.enabled)
+                    }
+                }
+            } else {
+                Text("No se pudo obtener la información de rclone.").font(.caption).foregroundStyle(.secondary)
             }
             HStack {
                 Spacer()
-                Button("Cerrar") { showInfoSheet = false }
+                Button("Cerrar") { infoItem = nil }
             }
         }
         .padding(20)
