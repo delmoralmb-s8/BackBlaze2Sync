@@ -359,30 +359,36 @@ struct ExplorerView: View {
         return withTransfers.background(keyboardShortcutButtons)
     }
 
+    // Toolbar row + breadcrumb + path-input row icons/text, bumped 15% at Bernabe's request
+    // (13pt body / 11pt caption system defaults × 1.15) — one shared source so every element in
+    // that block scales by the exact same factor instead of hand-picked, inconsistent sizes.
+    private let toolbarBodySize: CGFloat = 13 * 1.15
+    private let toolbarCaptionSize: CGFloat = 11 * 1.15
+
     private var mainContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Un clic selecciona (reemplaza la selección); Cmd+clic agrega o quita de la selección. Doble clic entra a la carpeta. Clic en vacío deselecciona. Clic derecho para más opciones.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 8) {
-                Button { goBack() } label: { Image(systemName: "chevron.left") }
+            HStack(spacing: 9) {
+                Button { goBack() } label: { Image(systemName: "chevron.left").font(.system(size: toolbarBodySize)) }
                     .disabled(backStack.isEmpty)
                     .help("Atrás")
                     .keyboardShortcut("[", modifiers: .command)
-                Button { goForward() } label: { Image(systemName: "chevron.right") }
+                Button { goForward() } label: { Image(systemName: "chevron.right").font(.system(size: toolbarBodySize)) }
                     .disabled(forwardStack.isEmpty)
                     .help("Adelante")
                     .keyboardShortcut("]", modifiers: .command)
-                Button { navigateUp() } label: { Image(systemName: "arrow.up") }
+                Button { navigateUp() } label: { Image(systemName: "arrow.up").font(.system(size: toolbarBodySize)) }
                     .disabled(browsePath.isEmpty)
                     .help("Subir un nivel")
                     .keyboardShortcut(.upArrow, modifiers: .command)
-                Button { refreshCurrentFolder() } label: { Image(systemName: "arrow.clockwise") }
+                Button { refreshCurrentFolder() } label: { Image(systemName: "arrow.clockwise").font(.system(size: toolbarBodySize)) }
                     .disabled(rclone.isListingRemote || rclone.isRunning)
                     .help("Actualizar esta carpeta")
                     .keyboardShortcut("r", modifiers: .command)
-                Button { goTo("") } label: { Image(systemName: "house") }
+                Button { goTo("") } label: { Image(systemName: "house").font(.system(size: toolbarBodySize)) }
                     .disabled(browsePath.isEmpty)
                     .keyboardShortcut("h", modifiers: [.command, .shift])
                     .help("Ir a la raíz del bucket")
@@ -391,7 +397,7 @@ struct ExplorerView: View {
                     Button("Subir archivo… (⌘U)") { uploadFiles(into: fullBrowsePath) }
                     Button("Subir carpeta… (⌘⇧U)") { uploadFolder(into: fullBrowsePath) }
                 } label: {
-                    Image(systemName: "icloud.and.arrow.up")
+                    Image(systemName: "icloud.and.arrow.up").font(.system(size: toolbarBodySize))
                 }
                 .disabled(rclone.isRunning)
                 .help("Subir archivo o carpeta a esta ubicación")
@@ -401,16 +407,18 @@ struct ExplorerView: View {
                 Picker("", selection: $viewMode) {
                     Label("Vista Iconos", systemImage: "square.grid.2x2")
                         .labelStyle(.iconOnly)
+                        .font(.system(size: toolbarBodySize))
                         .help("Vista Iconos")
                         .tag(ExplorerViewMode.icons)
                     Label("Vista desplegable", systemImage: "list.bullet")
                         .labelStyle(.iconOnly)
+                        .font(.system(size: toolbarBodySize))
                         .help("Vista desplegable")
                         .tag(ExplorerViewMode.list)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 90)
+                .frame(width: 104)
 
                 Button {
                     newFolderTarget = .explorer
@@ -418,6 +426,7 @@ struct ExplorerView: View {
                     showNewFolderPrompt = true
                 } label: {
                     Label("Nueva carpeta…", systemImage: "folder.badge.plus")
+                        .font(.system(size: toolbarBodySize))
                 }
                 .disabled(rclone.isRunning)
             }
@@ -430,15 +439,17 @@ struct ExplorerView: View {
             HStack {
                 TextField("carpeta/subcarpeta (sin el nombre del bucket)", text: $pathInput)
                     .textFieldStyle(.roundedBorder)
-                    .font(.caption)
+                    .font(.system(size: toolbarCaptionSize))
                     .onSubmit { goTo(pathInput) }
                 // goTo(_:) sets browsePath verbatim — no "bucket:" prefix or leading "/" is ever
                 // parsed out, so the only valid syntax really is a bare relative path. This is the
                 // one place that says so explicitly instead of leaving it to be guessed.
                 Image(systemName: "questionmark.circle")
+                    .font(.system(size: toolbarBodySize))
                     .foregroundStyle(.secondary)
                     .help("Escribe una ruta relativa dentro de \(connection.bucket) — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta")
                 Button("Ir") { goTo(pathInput) }
+                    .font(.system(size: toolbarBodySize))
                     .disabled(rclone.isListingRemote || rclone.isRunning)
             }
 
@@ -654,24 +665,26 @@ struct ExplorerView: View {
 
     private var searchBar: some View {
         HStack(spacing: 4) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: toolbarBodySize))
+                .foregroundStyle(.secondary)
             TextField("Buscar en todo el bucket…", text: $searchQuery)
                 .textFieldStyle(.roundedBorder)
-                .font(.caption)
+                .font(.system(size: toolbarCaptionSize))
                 .focused($searchFieldFocused)
                 .onSubmit { performSearch() }
             if isSearching {
                 searchingIndicator
-                Button("Detener") { cancelSearch() }.font(.caption)
+                Button("Detener") { cancelSearch() }.font(.system(size: toolbarCaptionSize))
             } else if searchResults != nil {
-                Button("Limpiar") { clearSearch() }.font(.caption)
+                Button("Limpiar") { clearSearch() }.font(.system(size: toolbarCaptionSize))
             } else {
                 Button("Buscar") { performSearch() }
-                    .font(.caption)
+                    .font(.system(size: toolbarCaptionSize))
                     .disabled(searchQuery.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
-        .frame(width: 300)
+        .frame(width: 345)
     }
 
     /// Instead of a spinner or a meaningless tick counter, show the actual `rclone` command
@@ -1947,8 +1960,11 @@ struct ExplorerView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "folder.fill").foregroundStyle(.orange)
+                Image(systemName: "folder.fill")
+                    .font(.system(size: toolbarBodySize))
+                    .foregroundStyle(.orange)
                 Text(current.isEmpty ? "/\(connection.bucket)" : "/\(connection.bucket)/\(current)")
+                    .font(.system(size: toolbarBodySize))
                     .lineLimit(1)
                     .truncationMode(.head)
             }
