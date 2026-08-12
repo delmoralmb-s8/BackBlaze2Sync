@@ -1089,8 +1089,13 @@ struct ExplorerView: View {
     private func refreshAfterRemoteChange(at path: String) {
         // fullBrowsePath always has a trailing "/" (from connection.remotePrefix at the
         // bucket root); parentPath(of:) never does — normalize before comparing.
+        // Uses refreshCurrentFolder() (same as the "Actualizar" button), not listCurrentPath():
+        // the mutation already invalidated this path's cache entry when it started, but if
+        // anything else re-listed the same folder while the mutation was still running, that
+        // read could have repopulated the cache with pre-mutation data — invalidating again
+        // right before listing closes that race instead of risking a stale view.
         if normalizedPath(path) == normalizedPath(fullBrowsePath) {
-            listCurrentPath()
+            refreshCurrentFolder()
         } else {
             refreshNodeIfPresent(path: path)
         }
@@ -2016,7 +2021,7 @@ struct ExplorerView: View {
         rclone.createFolder(at: base, name: name) { success in
             guard success else { return }
             if newFolderTarget == .explorer {
-                listCurrentPath()
+                refreshCurrentFolder()
             } else {
                 refreshPickerAfterChange(at: base)
             }
