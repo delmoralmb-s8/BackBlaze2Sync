@@ -343,6 +343,11 @@ struct ContentView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            DisclosureGroup("Where do I get this?") {
+                keyMappingDiagram.padding(.top, 6)
+            }
+            .font(.caption)
+
             TextField("Nombre (como se muestra en la app)", text: $newConnName)
                 .textFieldStyle(.roundedBorder)
             TextField("Key ID / Account ID de B2", text: $newConnAccountID)
@@ -380,6 +385,41 @@ struct ContentView: View {
             // forces the catalog lookup for the small set of known messages friendlyErrorMessage
             // returns; unrecognized rclone text (no matching key) just falls through verbatim.
             Text(LocalizedStringKey(connectionErrorMessage ?? ""))
+        }
+    }
+
+    /// Schematic (no real screenshot, so it never goes stale if Backblaze redesigns its site)
+    /// mapping the field names shown on Backblaze's "Application Keys" page to this form's fields.
+    /// Kept in English regardless of app language — Backblaze's own field names are always
+    /// English, and this is reference material, not interface copy (same call as the fixed
+    /// "DELETE" confirmation word in the Gallery).
+    private var keyMappingDiagram: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("On Backblaze's page where you create the key (\"Application Keys\"):")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            keyMappingRow(b2Label: "keyID", appLabel: "Key ID / Account ID")
+            keyMappingRow(b2Label: "applicationKey", appLabel: "Application Key")
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func keyMappingRow(b2Label: String, appLabel: String) -> some View {
+        HStack(spacing: 8) {
+            Text(b2Label)
+                .font(.system(.caption, design: .monospaced))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            Image(systemName: "arrow.right")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(appLabel)
+                .font(.caption)
+                .fontWeight(.medium)
         }
     }
 
