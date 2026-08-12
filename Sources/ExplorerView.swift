@@ -664,24 +664,28 @@ struct ExplorerView: View {
     // tree out of arbitrary scattered matches, and just as fast to get to the file.)
 
     private var searchBar: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: toolbarBodySize))
-                .foregroundStyle(.secondary)
-            TextField("Buscar en todo el bucket…", text: $searchQuery)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: toolbarCaptionSize))
-                .focused($searchFieldFocused)
-                .onSubmit { performSearch() }
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: toolbarBodySize))
+                    .foregroundStyle(.secondary)
+                TextField("Buscar en todo el bucket…", text: $searchQuery)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: toolbarCaptionSize))
+                    .focused($searchFieldFocused)
+                    .onSubmit { performSearch() }
+                if isSearching {
+                    Button("Detener") { cancelSearch() }.font(.system(size: toolbarCaptionSize))
+                } else if searchResults != nil {
+                    Button("Limpiar") { clearSearch() }.font(.system(size: toolbarCaptionSize))
+                } else {
+                    Button("Buscar") { performSearch() }
+                        .font(.system(size: toolbarCaptionSize))
+                        .disabled(searchQuery.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
             if isSearching {
                 searchingIndicator
-                Button("Detener") { cancelSearch() }.font(.system(size: toolbarCaptionSize))
-            } else if searchResults != nil {
-                Button("Limpiar") { clearSearch() }.font(.system(size: toolbarCaptionSize))
-            } else {
-                Button("Buscar") { performSearch() }
-                    .font(.system(size: toolbarCaptionSize))
-                    .disabled(searchQuery.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .frame(width: 345)
