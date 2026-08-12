@@ -403,7 +403,11 @@ final class RcloneManager: ObservableObject {
     }
 
     func listRemote(path: String, target: RemoteListTarget = .main) {
-        guard !isRunning else { return }
+        // No isRunning guard here on purpose: listing is read-only, runs its own separate
+        // process/pipe (runLsJSON), and never touches percent/process/isRunning — same
+        // side-channel shape as folderSize/searchAll/generateShareLink, all of which already run
+        // freely during a transfer. Gating navigation on isRunning meant clicking into a folder
+        // while an upload ran just silently did nothing (felt like the window had frozen).
         if let cached = cachedEntries(for: path) {
             switch target {
             case .main:
