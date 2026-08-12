@@ -1354,6 +1354,12 @@ final class RcloneManager: ObservableObject {
 
     private func endBatch() {
         batch = nil
+        // Nothing ever reset these after a batch finished — the bar just sat at "100% ... ETA 0s"
+        // until the next operation started. Shared by upload/move/copy/download (every endBatch()
+        // caller), so fixing it here covers all four instead of duplicating it four times.
+        percent = 0
+        speed = ""
+        eta = ""
     }
 
     /// Fans out `rclone size` across every item concurrently — needed before a multi-item
