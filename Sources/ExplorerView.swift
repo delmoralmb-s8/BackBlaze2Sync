@@ -261,6 +261,10 @@ struct ExplorerView: View {
 
     @State private var searchQuery = ""
     @State private var searchResults: [RemoteEntry]?
+    // Rows are selected via .onTapGesture, not a real focusable AppKit control, so nothing ever
+    // naturally takes keyboard focus away from the search field once it has it — Space then types
+    // a literal space into the field instead of reaching the hidden Quick Look shortcut button.
+    @FocusState private var searchFieldFocused: Bool
     @State private var isSearching = false
     @State private var searchGeneration = 0
 
@@ -654,6 +658,7 @@ struct ExplorerView: View {
             TextField("Buscar en todo el bucket…", text: $searchQuery)
                 .textFieldStyle(.roundedBorder)
                 .font(.caption)
+                .focused($searchFieldFocused)
                 .onSubmit { performSearch() }
             if isSearching {
                 searchingIndicator
@@ -2080,6 +2085,7 @@ struct ExplorerView: View {
 
     /// Plain click selects only this item (Finder-style); Cmd-click adds/removes it from the selection.
     private func selectItem(_ path: String, additive: Bool) {
+        searchFieldFocused = false
         if additive {
             toggleSelection(path)
         } else {
