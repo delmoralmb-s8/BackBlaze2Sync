@@ -28,6 +28,18 @@ struct RemoteEntry: Codable, Identifiable, Equatable {
     var id: String { Path }
 }
 
+/// Everything `rclone lsjson --stat --hash` can tell us about exactly one item — used by
+/// "Mostrar información", which wants more than the 4 fields `RemoteEntry` keeps for listings.
+struct RemoteEntryDetail: Codable {
+    let Path: String
+    let Name: String
+    let Size: Int64
+    let IsDir: Bool
+    let ModTime: String?
+    let MimeType: String?
+    let Hashes: [String: String]?
+}
+
 /// A remote file/folder addressed by its full path (e.g. "b2:mybucket/books/foo.epub"),
 /// used once an item is selected — independent of which listing (flat or nested) produced it.
 struct RemotePathItem: Hashable {
@@ -613,6 +625,33 @@ final class RcloneManager: ObservableObject {
             try task.run()
         } catch {
             completion([], false, error.localizedDescription)
+        }
+    }
+
+    /// Full metadata for a single item, used by "Mostrar información" — `--stat` points rclone at
+    /// exactly this path instead of listing its parent folder, and `--hash` adds whatever checksum
+    /// the remote already has on file (B2 stores SHA1 for every object for free).
+    func statItem(path: String, completion: @escaping (RemoteEntryDetail?) -> Void) {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs + ["lsjson", "--stat", "--hash", path]
+        let outPipe = Pipe()
+        let errPipe = Pipe()
+        task.standardOutput = outPipe
+        task.standardError = errPipe
+
+        task.terminationHandler = { proc in
+            let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            Task { @MainActor in
+                guard proc.terminationStatus == 0 else { completion(nil); return }
+                completion(try? JSONDecoder().decode(RemoteEntryDetail.self, from: data))
+            }
+        }
+
+        do {
+            try task.run()
+        } catch {
+            completion(nil)
         }
     }
 

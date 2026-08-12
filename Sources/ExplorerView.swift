@@ -254,6 +254,8 @@ struct ExplorerView: View {
     @State private var infoItem: RemotePathItem?
     @State private var infoFolderSize: FolderSizeInfo?
     @State private var isLoadingInfoSize = false
+    @State private var infoDetail: RemoteEntryDetail?
+    @State private var isLoadingInfoDetail = false
 
     @State private var isDropTargetedBackground = false
     @State private var dropTargetPath: String?
@@ -1162,7 +1164,8 @@ struct ExplorerView: View {
                 shareLinkErrorMessage = nil
                 isGeneratingViewLink = false
                 isGeneratingDownloadLink = false
-                showShareSheet = true
+                // Deferred for the same reason as "Mostrar información…" — see its comment.
+                DispatchQueue.main.async { showShareSheet = true }
             }
         }
 
@@ -1422,12 +1425,25 @@ struct ExplorerView: View {
     private func showInfo(for item: RemotePathItem) {
         infoItem = item
         infoFolderSize = nil
-        showInfoSheet = true
+        infoDetail = nil
+        // Deferred: flipping a @Published/@State sheet flag synchronously inside a .contextMenu
+        // Button action can silently fail to present on macOS — the NSMenu's tracking session
+        // hasn't fully torn down yet. Every other menu action that reaches a sheet/panel either
+        // blocks on a modal (NSOpenPanel in "Verificar integridad…") or goes through an .alert
+        // instead, which is why only this one (and "Generar URL para compartir…", same shape)
+        // needs the explicit next-runloop-tick dispatch.
+        DispatchQueue.main.async { showInfoSheet = true }
         if item.isDir {
             isLoadingInfoSize = true
             rclone.folderSize(path: item.path) { size in
                 infoFolderSize = size
                 isLoadingInfoSize = false
+            }
+        } else {
+            isLoadingInfoDetail = true
+            rclone.statItem(path: item.path) { detail in
+                infoDetail = detail
+                isLoadingInfoDetail = false
             }
         }
     }
@@ -1448,8 +1464,22 @@ struct ExplorerView: View {
                     } else {
                         Text("No se pudo calcular el tamaño.").font(.caption).foregroundStyle(.secondary)
                     }
-                } else if let info = pathRegistry[item.path] {
-                    LabeledContent("Tamaño", value: formattedSize(info.size))
+                } else if isLoadingInfoDetail {
+                    ProgressView().controlSize(.small)
+                } else if let detail = infoDetail {
+                    LabeledContent("Tamaño", value: formattedSize(detail.Size))
+                    LabeledContent("Modificado", value: formattedModTime(detail.ModTime))
+                    if let mime = detail.MimeType, !mime.isEmpty {
+                        LabeledContent("Tipo MIME", value: mime)
+                    }
+                    if let hashes = detail.Hashes {
+                        ForEach(hashes.keys.sorted(), id: \.self) { hashType in
+                            LabeledContent(hashType.uppercased(), value: hashes[hashType] ?? "")
+                                .textSelection(.enabled)
+                        }
+                    }
+                } else {
+                    Text("No se pudo obtener la información de rclone.").font(.caption).foregroundStyle(.secondary)
                 }
             }
             HStack {
