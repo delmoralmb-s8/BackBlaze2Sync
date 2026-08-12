@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var renameConnectionText = ""
 
     @State private var explorerExpanded = true
-    @State private var optionsExpanded = false
+    @State private var showOptionsPopover = false
     @State private var logExpanded = false
     @State private var errorsExpanded = false
 
@@ -66,12 +66,6 @@ struct ContentView: View {
                         Divider()
                     }
 
-                    DisclosureGroup(isExpanded: $optionsExpanded) {
-                        optionsSection.padding(.top, 8)
-                    } label: {
-                        Text("Opciones").font(.headline)
-                    }
-
                     if let status = rclone.verifyStatusMessage {
                         Label {
                             Text(status)
@@ -98,9 +92,6 @@ struct ContentView: View {
                 }
             }
             .padding(20)
-        }
-        .onChange(of: rclone.logLines.count) { _, newCount in
-            if newCount > 0 { logExpanded = true }
         }
         .onChange(of: rclone.failedOperations.count) { _, newCount in
             if newCount > 0 { errorsExpanded = true }
@@ -308,6 +299,20 @@ struct ContentView: View {
                 }
 
                 Spacer()
+
+                Button {
+                    showOptionsPopover = true
+                } label: {
+                    Label("Opciones avanzadas", systemImage: "gearshape")
+                        .labelStyle(.iconOnly)
+                }
+                .help("Opciones avanzadas")
+                .popover(isPresented: $showOptionsPopover) {
+                    optionsSection
+                        .padding(16)
+                        .frame(width: 320)
+                        .environment(\.locale, Locale(identifier: appLanguageCode))
+                }
 
                 Button {
                     openWindow(id: "history")
@@ -530,6 +535,16 @@ struct ContentView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            // Mini-log: the latest MEANINGFUL message only (never the raw --stats noise, see
+            // RcloneManager.lastMessage), overwritten in place on this one line — for someone who
+            // wants a sense of what's happening without opening the full Log below.
+            if !rclone.lastMessage.isEmpty {
+                Text(rclone.lastMessage)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
         }
     }
 
@@ -582,7 +597,7 @@ struct ContentView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(formattedLogText)
+                        Text(visibleLogText)
                             .font(.system(.caption, design: .monospaced))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -600,8 +615,24 @@ struct ContentView: View {
         }
     }
 
+    // A long transfer (--stats 1s, one file line per item actively transferring) can pile up
+    // thousands of lines in minutes — SwiftUI has to re-lay-out this WHOLE Text on every update
+    // since a plain ScrollView isn't lazy like a List, so a giant single Text got measurably
+    // slower (and felt like the window was about to hang) the longer a transfer ran. Rendering
+    // only the tail keeps that cost constant regardless of how long the log has gotten — "Copiar
+    // log"/"Exportar .txt" still use the full, uncapped history (formattedLogText below).
+    private static let visibleLogLineCount = 400
+
+    private var visibleLogText: String {
+        Self.formatted(rclone.logLines.suffix(Self.visibleLogLineCount))
+    }
+
     private var formattedLogText: String {
-        rclone.logLines
+        Self.formatted(rclone.logLines)
+    }
+
+    private static func formatted(_ lines: some Sequence<LogLine>) -> String {
+        lines
             .map { "[\($0.timestamp.formatted(date: .omitted, time: .standard))] \($0.text)" }
             .joined(separator: "\n")
     }

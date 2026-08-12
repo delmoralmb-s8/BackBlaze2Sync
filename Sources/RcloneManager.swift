@@ -108,6 +108,10 @@ final class RcloneManager: ObservableObject {
     @Published var speed = ""
     @Published var eta = ""
     @Published var logLines: [LogLine] = []
+    // The latest MEANINGFUL message ("Subiendo N elemento(s)…", "[OK] Subida completa.") for the
+    // one-line status under the progress bar — set only by log(_:), never by the raw rclone
+    // --stats passthrough (logRaw), which would otherwise flood it with "* file.raf: 34%..." noise.
+    @Published var lastMessage = ""
     @Published var lastResult: String?
     @Published var remoteEntries: [RemoteEntry] = []
     @Published var isListingRemote = false
@@ -224,6 +228,17 @@ final class RcloneManager: ObservableObject {
     private static let maxLogLines = 5000
 
     func log(_ text: String) {
+        logLines.append(LogLine(timestamp: Date(), text: text))
+        lastMessage = text
+        if logLines.count > Self.maxLogLines {
+            logLines.removeFirst(logLines.count - Self.maxLogLines)
+        }
+    }
+
+    /// Same as `log(_:)` but doesn't touch `lastMessage` — used only for rclone's raw `--stats`
+    /// passthrough, which fires ~10 times a second per active transfer and would otherwise turn
+    /// the one-line mini status under the progress bar into unreadable noise.
+    private func logRaw(_ text: String) {
         logLines.append(LogLine(timestamp: Date(), text: text))
         if logLines.count > Self.maxLogLines {
             logLines.removeFirst(logLines.count - Self.maxLogLines)
@@ -1498,7 +1513,7 @@ final class RcloneManager: ObservableObject {
                 }
             }
         }
-        log(line)
+        logRaw(line)
     }
 
     /// Parses rclone's human-readable speed ("1.300 MiB/s", "850 KiB/s") into bytes/second,
