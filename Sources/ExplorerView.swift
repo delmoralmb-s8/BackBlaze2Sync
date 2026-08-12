@@ -266,6 +266,7 @@ struct ExplorerView: View {
     // a literal space into the field instead of reaching the hidden Quick Look shortcut button.
     @FocusState private var searchFieldFocused: Bool
     @State private var isSearching = false
+    @State private var searchStartDate: Date?
     @State private var searchGeneration = 0
 
     @State private var showFileActionDialog = false
@@ -691,17 +692,30 @@ struct ExplorerView: View {
         .frame(width: 345)
     }
 
-    /// Instead of a spinner or a meaningless tick counter, show the actual `rclone` command
-    /// running underneath — `lsjson` doesn't stream progress line-by-line like `--progress`
-    /// transfers do, so there's no real log to show, but the command itself is real information.
+    /// Shows the real `rclone` command right when the search starts (`lsjson` doesn't stream
+    /// progress line-by-line like `--progress` transfers do, so there's no real log to show, but
+    /// the command itself is real information) — then, since a whole-bucket recursive listing can
+    /// take a while, cycles into a few reassuring messages every 3s so it doesn't look stuck.
     private var searchingIndicator: some View {
         TimelineView(.periodic(from: .now, by: 0.4)) { context in
+            let elapsed = searchStartDate.map { context.date.timeIntervalSince($0) } ?? 0
             let dots = String(repeating: ".", count: Int(context.date.timeIntervalSinceReferenceDate / 0.4) % 4)
-            Text("rclone lsjson --recursive \(connection.remotePrefix)\(dots)")
-                .font(.system(.caption2, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            Group {
+                switch Int(elapsed / 3) % 4 {
+                case 0:
+                    (Text("rclone lsjson --recursive \(connection.remotePrefix)") + Text(dots))
+                        .font(.system(.caption2, design: .monospaced))
+                case 1:
+                    (Text("Sí estoy buscando") + Text(dots)).font(.caption2)
+                case 2:
+                    (Text("No desesperes, en verdad estoy buscando") + Text(dots)).font(.caption2)
+                default:
+                    (Text("La búsqueda es en la nube, no esperes tanta rapidez") + Text(dots)).font(.caption2)
+                }
+            }
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .truncationMode(.middle)
         }
     }
 
@@ -714,9 +728,11 @@ struct ExplorerView: View {
         searchGeneration += 1
         let generation = searchGeneration
         isSearching = true
+        searchStartDate = Date()
         rclone.searchAll(basePath: connection.remotePrefix, query: trimmed) { results in
             guard generation == searchGeneration else { return }
             isSearching = false
+            searchStartDate = nil
             searchResults = results
         }
     }
@@ -725,6 +741,7 @@ struct ExplorerView: View {
         searchGeneration += 1
         rclone.cancelSearch()
         isSearching = false
+        searchStartDate = nil
         searchResults = nil
     }
 
@@ -733,6 +750,7 @@ struct ExplorerView: View {
         rclone.cancelSearch()
         searchQuery = ""
         isSearching = false
+        searchStartDate = nil
         searchResults = nil
     }
 
@@ -2230,7 +2248,9 @@ struct ExplorerView: View {
 
     private func megabytesText(_ bytes: Int64) -> String {
         guard bytes >= 0 else { return "—" }
-        return String(format: "%.1f MB", Double(bytes) / 1_048_576)
+        let megabytes = Double(bytes) / 1_048_576
+        guard megabytes >= 1000 else { return String(format: "%.1f MB", megabytes) }
+        return String(format: "%.1f GB", megabytes / 1024)
     }
 
     private static let modTimeParsers: [ISO8601DateFormatter] = {

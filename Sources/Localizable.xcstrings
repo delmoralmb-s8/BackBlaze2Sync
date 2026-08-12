@@ -2801,6 +2801,34 @@
         }
       }
     },
+    "La búsqueda es en la nube, no esperes tanta rapidez": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La búsqueda es en la nube, no esperes tanta rapidez"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This search runs in the cloud, so don't expect it to be lightning fast"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A busca é feita na nuvem, então não espere tanta rapidez assim"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La recherche se fait dans le cloud, ne t'attends pas à une vitesse fulgurante"
+          }
+        }
+      }
+    },
     "Limpiar": {
       "localizations": {
         "en": {
@@ -3217,6 +3245,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mover seleção…"
+          }
+        }
+      }
+    },
+    "No desesperes, en verdad estoy buscando": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No desesperes, en verdad estoy buscando"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang in there, I really am searching"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não desista, estou mesmo procurando"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne t'inquiète pas, je cherche vraiment"
           }
         }
       }
@@ -4589,6 +4645,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subir um nível"
+          }
+        }
+      }
+    },
+    "Sí estoy buscando": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sí estoy buscando"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, I'm still searching"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sim, ainda estou procurando"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oui, je cherche toujours"
           }
         }
       }
