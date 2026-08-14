@@ -23,10 +23,11 @@ struct PathInfo {
 /// carry half a dozen separate closure parameters at every nesting level.
 struct ExplorerRowContext {
     let isSelected: (String) -> Bool
-    let selectItem: (String, Bool) -> Void  // path, additive (Cmd held)
+    let selectItem: (String, Bool, Bool) -> Void  // path, additive (Cmd held), rangeExtend (Shift held)
     let toggleExpand: (ExplorerNode) -> Void
     let navigateInto: (ExplorerNode) -> Void
     let iconName: (String) -> String
+    let typeText: (String, Bool) -> String  // filename, isDir
     let formattedSize: (Int64) -> String
     let megabytesText: (Int64) -> String
     let formattedModTime: (String?) -> String
@@ -43,6 +44,7 @@ struct ExplorerRowContext {
 
 /// One row of the "vista desplegable" (Finder List View), recursing into its children when expanded.
 struct ExplorerNodeRow: View {
+    static let typeColumnWidth: CGFloat = 110
     static let sizeColumnWidth: CGFloat = 80
     static let modColumnWidth: CGFloat = 130
 
@@ -70,6 +72,11 @@ struct ExplorerNodeRow: View {
                     .frame(width: 20)
                 Text(node.entry.Name).lineLimit(1)
                 Spacer()
+                Text(ctx.typeText(node.entry.Name, node.entry.IsDir))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(width: Self.typeColumnWidth, alignment: .trailing)
                 Group {
                     if node.entry.IsDir {
                         Text(folderSizeText ?? "…")
@@ -98,7 +105,7 @@ struct ExplorerNodeRow: View {
                 if node.entry.IsDir { ctx.navigateInto(node) }
             }
             .onTapGesture(count: 1) {
-                ctx.selectItem(node.fullPath, NSEvent.modifierFlags.contains(.command))
+                ctx.selectItem(node.fullPath, NSEvent.modifierFlags.contains(.command), NSEvent.modifierFlags.contains(.shift))
             }
             .contextMenu {
                 ctx.contextMenu(RemotePathItem(path: node.fullPath, name: node.entry.Name, isDir: node.entry.IsDir))
@@ -225,6 +232,10 @@ struct ExplorerView: View {
     @State private var backStack: [String] = []
     @State private var forwardStack: [String] = []
     @State private var viewMode: ExplorerViewMode = .list
+
+    enum ListSortColumn { case name, type, size, modified }
+    @State private var sortColumn: ListSortColumn = .name
+    @State private var sortAscending = true
     // ponytail: reflects "last bulk action taken via this button", not a live re-derivation of
     // every node's isExpanded — the latter doesn't trigger a re-render here since ExplorerView
     // doesn't subscribe to individual ExplorerNode publishers, which was the original bug.
@@ -232,6 +243,10 @@ struct ExplorerView: View {
 
     @State private var pathRegistry: [String: PathInfo] = [:]
     @State private var selectedPaths: Set<String> = []
+    // The last item clicked WITHOUT Shift — Shift+click ranges from here to the new click, same
+    // as Finder. Stays put across consecutive Shift+clicks so you can extend/shrink a range
+    // without it jumping to whatever you last shift-clicked.
+    @State private var selectionAnchor: String?
     @State private var rootNodes: [ExplorerNode] = []
 
     @State private var showDeleteConfirm = false
@@ -532,10 +547,12 @@ struct ExplorerView: View {
                 pathInput = newValue
                 rclone.explorerPath = newValue
             }
+            .onChange(of: sortColumn) { resortWholeTree() }
+            .onChange(of: sortAscending) { resortWholeTree() }
             .onChange(of: rclone.remoteEntries) { _, newEntries in
                 register(parentPath: fullBrowsePath, entries: newEntries)
                 let previousByPath = Dictionary(uniqueKeysWithValues: rootNodes.map { ($0.fullPath, $0) })
-                rootNodes = newEntries.map { entry in
+                rootNodes = sortedEntries(newEntries).map { entry in
                     let node = ExplorerNode(entry: entry, parentFullPath: fullBrowsePath, depth: 0)
                     if let previous = previousByPath[node.fullPath] {
                         node.restoreState(from: previous)
@@ -928,7 +945,7 @@ struct ExplorerView: View {
             if entry.IsDir { navigateInto(entry) }
         }
         .onTapGesture(count: 1) {
-            selectItem(fp, additive: NSEvent.modifierFlags.contains(.command))
+            selectItem(fp, additive: NSEvent.modifierFlags.contains(.command), rangeExtend: NSEvent.modifierFlags.contains(.shift))
         }
         .contextMenu {
             contextMenuItems(clicked: RemotePathItem(path: fp, name: entry.Name, isDir: entry.IsDir))
@@ -960,16 +977,34 @@ struct ExplorerView: View {
 
     private var listColumnHeader: some View {
         HStack(spacing: 4) {
-            Text("Nombre")
+            sortHeaderButton("Nombre", column: .name)
             Spacer()
-            Text("Tamaño")
-                .frame(width: ExplorerNodeRow.sizeColumnWidth, alignment: .trailing)
-            Text("Modificación")
-                .frame(width: ExplorerNodeRow.modColumnWidth, alignment: .trailing)
+            sortHeaderButton("Tipo", column: .type, width: ExplorerNodeRow.typeColumnWidth)
+            sortHeaderButton("Tamaño", column: .size, width: ExplorerNodeRow.sizeColumnWidth)
+            sortHeaderButton("Modificación", column: .modified, width: ExplorerNodeRow.modColumnWidth)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
+    }
+
+    /// Clicking a header sorts by that column; clicking the active one again flips direction —
+    /// same as Finder's own list view column headers.
+    private func sortHeaderButton(_ title: LocalizedStringKey, column: ListSortColumn, width: CGFloat? = nil) -> some View {
+        Button {
+            if sortColumn == column { sortAscending.toggle() } else { sortColumn = column; sortAscending = true }
+        } label: {
+            HStack(spacing: 2) {
+                if width != nil { Spacer(minLength: 0) }
+                Text(title)
+                if sortColumn == column {
+                    Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 8))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(width: width, alignment: width == nil ? .leading : .trailing)
     }
 
     private var listTree: some View {
@@ -999,10 +1034,11 @@ struct ExplorerView: View {
     private var rowContext: ExplorerRowContext {
         ExplorerRowContext(
             isSelected: { selectedPaths.contains($0) },
-            selectItem: { path, additive in selectItem(path, additive: additive) },
+            selectItem: { path, additive, rangeExtend in selectItem(path, additive: additive, rangeExtend: rangeExtend) },
             toggleExpand: { toggleExpand($0) },
             navigateInto: { navigateToNode($0) },
             iconName: { iconName(for: $0) },
+            typeText: { name, isDir in typeLabel(name: name, isDir: isDir) },
             formattedSize: { formattedSize($0) },
             megabytesText: { megabytesText($0) },
             formattedModTime: { formattedModTime($0) },
@@ -1062,7 +1098,7 @@ struct ExplorerView: View {
         node.isLoadingChildren = true
         rclone.listEntries(path: node.fullPath) { entries in
             register(parentPath: node.fullPath, entries: entries)
-            let children = entries.map { ExplorerNode(entry: $0, parentFullPath: node.fullPath, depth: node.depth + 1) }
+            let children = sortedEntries(entries).map { ExplorerNode(entry: $0, parentFullPath: node.fullPath, depth: node.depth + 1) }
             node.markLoaded(children: children)
         }
     }
@@ -2121,13 +2157,43 @@ struct ExplorerView: View {
         if selectedPaths.contains(path) { selectedPaths.remove(path) } else { selectedPaths.insert(path) }
     }
 
-    /// Plain click selects only this item (Finder-style); Cmd-click adds/removes it from the selection.
-    private func selectItem(_ path: String, additive: Bool) {
+    /// Plain click selects only this item (Finder-style) and moves the range anchor here;
+    /// Cmd-click adds/removes it from the selection; Shift-click selects everything visible
+    /// between the anchor and this item, same as Finder, without moving the anchor.
+    private func selectItem(_ path: String, additive: Bool, rangeExtend: Bool = false) {
         searchFieldFocused = false
+        if rangeExtend, let anchor = selectionAnchor {
+            let order = visiblePathsInOrder
+            if let anchorIndex = order.firstIndex(of: anchor), let targetIndex = order.firstIndex(of: path) {
+                let range = anchorIndex <= targetIndex ? anchorIndex...targetIndex : targetIndex...anchorIndex
+                selectedPaths = Set(order[range])
+                return
+            }
+        }
+        selectionAnchor = path
         if additive {
             toggleSelection(path)
         } else {
             selectedPaths = [path]
+        }
+    }
+
+    /// Every path currently on screen, in on-screen order — icons view is just the flat current
+    /// folder; list view walks the tree but only descends into folders the user has expanded, so
+    /// a Shift-click range matches exactly what's visible, not the whole (possibly huge) subtree.
+    private var visiblePathsInOrder: [String] {
+        switch viewMode {
+        case .icons:
+            return rclone.remoteEntries.map { fullPath(for: $0, parent: fullBrowsePath) }
+        case .list:
+            func flatten(_ nodes: [ExplorerNode]) -> [String] {
+                nodes.flatMap { node -> [String] in
+                    var result = [node.fullPath]
+                    if node.isExpanded { result += flatten(node.children) }
+                    return result
+                }
+            }
+            return flatten(rootNodes)
         }
     }
 
@@ -2230,6 +2296,57 @@ struct ExplorerView: View {
     }
 
     // MARK: - Formatting
+
+    /// Re-sorts the tree in place (root + every already-expanded folder, recursively) instead of
+    /// rebuilding it — clicking a column header shouldn't collapse folders you already opened or
+    /// re-fetch children that are already loaded, just reorder what's already there.
+    private func resortWholeTree() {
+        rootNodes = sortedNodes(rootNodes)
+        func sortChildren(_ node: ExplorerNode) {
+            node.children = sortedNodes(node.children)
+            for child in node.children { sortChildren(child) }
+        }
+        for node in rootNodes { sortChildren(node) }
+    }
+
+    private func sortedNodes(_ nodes: [ExplorerNode]) -> [ExplorerNode] {
+        let byPath = Dictionary(uniqueKeysWithValues: nodes.map { ($0.entry.Path, $0) })
+        return sortedEntries(nodes.map(\.entry)).compactMap { byPath[$0.Path] }
+    }
+
+    /// Applied wherever the list view builds a level of the tree (root + each expanded folder's
+    /// children) — the icon grid is untouched, this is specifically about the list's columns.
+    private func sortedEntries(_ entries: [RemoteEntry]) -> [RemoteEntry] {
+        let ascending = entries.sorted { a, b in
+            switch sortColumn {
+            case .name:
+                return a.Name.localizedStandardCompare(b.Name) == .orderedAscending
+            case .type:
+                let ta = typeLabel(name: a.Name, isDir: a.IsDir)
+                let tb = typeLabel(name: b.Name, isDir: b.IsDir)
+                return ta == tb
+                    ? a.Name.localizedStandardCompare(b.Name) == .orderedAscending
+                    : ta.localizedStandardCompare(tb) == .orderedAscending
+            case .size:
+                return a.Size < b.Size
+            case .modified:
+                return (a.ModTime ?? "") < (b.ModTime ?? "")
+            }
+        }
+        return sortAscending ? ascending : ascending.reversed()
+    }
+
+    /// Human-readable kind for the "Tipo" column — UTType already knows "PDF document"/"JPEG
+    /// image"/etc. per extension and gives it in the system's own language, same source macOS's
+    /// own Finder "Kind" column uses, instead of hand-maintaining a translation table per extension.
+    private func typeLabel(name: String, isDir: Bool) -> String {
+        if isDir { return String(localized: "Carpeta") }
+        let ext = (name as NSString).pathExtension
+        guard !ext.isEmpty, let type = UTType(filenameExtension: ext) else {
+            return String(localized: "Documento")
+        }
+        return type.localizedDescription ?? ext.uppercased()
+    }
 
     private func iconName(for filename: String) -> String {
         if ImageKind.isImage(filename) { return "photo.fill" }
