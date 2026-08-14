@@ -120,13 +120,30 @@ struct HistoryView: View {
         .font(.system(size: Self.rowFontSize))
     }
 
+    /// (SF Symbol name, tint) per operation type — record.type is always one of these six literal
+    /// Spanish strings, set by RcloneManager.recordOperation's callers, never user-facing text to
+    /// translate on its own.
+    private func iconAndColor(for type: String) -> (symbol: String, color: Color) {
+        switch type {
+        case "Subida": return ("icloud.and.arrow.up.fill", .blue)
+        case "Descarga": return ("icloud.and.arrow.down.fill", .blue)
+        case "Mover": return ("arrow.right.circle.fill", .orange)
+        case "Copiar": return ("doc.on.doc.fill", .purple)
+        case "Borrar": return ("trash.fill", .red)
+        case "Comprimir": return ("doc.zipper", .brown)
+        default: return ("questionmark.circle.fill", .secondary)
+        }
+    }
+
     private func operationRow(_ record: OperationRecord) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        let icon = iconAndColor(for: record.type)
+        return VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(record.date.formatted(date: .omitted, time: .shortened))
                     .frame(width: 70, alignment: .leading)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Image(systemName: icon.symbol).foregroundStyle(icon.color)
                 Text(record.type).foregroundStyle(.secondary)
                 Text("\(record.fileCount) archivo(s)").foregroundStyle(.secondary)
                 Text(sizeLabel(for: record))
