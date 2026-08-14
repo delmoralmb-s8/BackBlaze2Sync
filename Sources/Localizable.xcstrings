@@ -5517,6 +5517,62 @@
         }
       }
     },
+    "de ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de "
+          }
+        }
+      }
+    },
+    "desde ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "desde "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "from "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "depuis "
+          }
+        }
+      }
+    },
     "o escribe/pega una ruta dentro del bucket": {
       "localizations": {
         "en": {

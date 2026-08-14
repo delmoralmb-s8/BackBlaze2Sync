@@ -92,9 +92,16 @@ struct OperationRecord: Codable, Identifiable {
     /// Only set for "Descarga" — the local folder it landed in, so history answers "where did
     /// that go" without having to remember or guess.
     var localPath: String? = nil
-    /// The B2 side of the transfer — destination folder for "Subida", source folder for
-    /// "Descarga" — so history answers "where in the bucket" without cross-referencing the log.
+    /// The B2 side of the transfer — destination folder for "Subida"/"Mover"/"Copiar", source
+    /// folder for "Descarga"/"Borrar" — so history answers "where in the bucket" without
+    /// cross-referencing the log.
     var remotePath: String? = nil
+    /// Only set for "Mover"/"Copiar" — the shared source folder (both are B2→B2, so unlike
+    /// Subida/Descarga there are two bucket-side paths to show, not one). Assumes every item in
+    /// the batch came from the same folder, true for how the Explorer's selection works (you
+    /// select within one listing, then move/copy that selection) — same simplifying assumption
+    /// "Borrar" already makes for its own remotePath.
+    var sourceRemotePath: String? = nil
     /// Average throughput for the whole operation (total bytes / total wall-clock seconds), only
     /// set for "Subida"/"Descarga". nil rather than 0 when the operation was too fast to time
     /// meaningfully, so the UI can tell "no data" apart from "genuinely instant".
@@ -257,13 +264,13 @@ final class RcloneManager: ObservableObject {
 
     private static let maxHistoryEntries = 2000
 
-    private func recordOperation(type: String, fileCount: Int, success: Bool, bytes: Int64 = 0, bytesBefore: Int64 = 0, items: [OperationFileEntry] = [], detail: String? = nil, localPath: String? = nil, remotePath: String? = nil, elapsedSeconds: TimeInterval = 0) {
+    private func recordOperation(type: String, fileCount: Int, success: Bool, bytes: Int64 = 0, bytesBefore: Int64 = 0, items: [OperationFileEntry] = [], detail: String? = nil, localPath: String? = nil, remotePath: String? = nil, sourceRemotePath: String? = nil, elapsedSeconds: TimeInterval = 0) {
         let megabytes = Double(max(bytes, 0)) / 1_048_576
         let megabytesBefore = Double(max(bytesBefore, 0)) / 1_048_576
         // Anything under ~1s is too noisy to call a real rate (process startup, cache hits, tiny
         // files) — leave it nil rather than report a misleadingly huge or tiny number.
         let speed: Double? = elapsedSeconds > 1 ? megabytes / elapsedSeconds : nil
-        history.insert(OperationRecord(id: UUID(), date: Date(), type: type, fileCount: fileCount, percent: success ? 100 : percent, success: success, megabytes: megabytes, megabytesBefore: megabytesBefore, items: items, detail: detail, localPath: localPath, remotePath: remotePath, megabytesPerSecond: speed), at: 0)
+        history.insert(OperationRecord(id: UUID(), date: Date(), type: type, fileCount: fileCount, percent: success ? 100 : percent, success: success, megabytes: megabytes, megabytesBefore: megabytesBefore, items: items, detail: detail, localPath: localPath, remotePath: remotePath, sourceRemotePath: sourceRemotePath, megabytesPerSecond: speed), at: 0)
         if history.count > Self.maxHistoryEntries { history.removeLast(history.count - Self.maxHistoryEntries) }
         if let data = try? JSONEncoder().encode(history) {
             UserDefaults.standard.set(data, forKey: historyKey)
@@ -831,7 +838,14 @@ final class RcloneManager: ObservableObject {
                 self.endBatch()
                 self.log(success ? "[OK] Movido correctamente." : "[ERROR] Hubo errores moviendo algunos elementos.")
                 self.lastResult = success ? "success" : "error"
-                self.recordOperation(type: "Mover", fileCount: pairs.count, success: success)
+                self.recordOperation(
+                    type: "Mover",
+                    fileCount: pairs.count,
+                    success: success,
+                    items: items.map { OperationFileEntry(id: $0.name, megabytes: 0) },
+                    remotePath: toBase,
+                    sourceRemotePath: Self.parentPath(of: items.first?.path ?? "")
+                )
                 if !success && trackFailure {
                     self.recordFailure(type: "Mover", summary: "\(pairs.count) elemento(s) → \(toBase)") { [weak self] in
                         self?.moveItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)
@@ -942,7 +956,14 @@ final class RcloneManager: ObservableObject {
                 self.endBatch()
                 self.log(success ? "[OK] Copiado completo." : "[ERROR] Hubo errores al copiar.")
                 self.lastResult = success ? "success" : "error"
-                self.recordOperation(type: "Copiar", fileCount: pairs.count, success: success)
+                self.recordOperation(
+                    type: "Copiar",
+                    fileCount: pairs.count,
+                    success: success,
+                    items: items.map { OperationFileEntry(id: $0.name, megabytes: 0) },
+                    remotePath: toBase,
+                    sourceRemotePath: Self.parentPath(of: items.first?.path ?? "")
+                )
                 if !success && trackFailure {
                     self.recordFailure(type: "Copiar", summary: "\(pairs.count) elemento(s) → \(toBase)") { [weak self] in
                         self?.copyItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)

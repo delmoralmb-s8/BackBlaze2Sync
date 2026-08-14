@@ -160,7 +160,7 @@ struct HistoryView: View {
             .font(.system(size: Self.rowFontSize))
 
             if let detail = detailLine(for: record) {
-                Text(detail)
+                detail
                     .font(.system(size: Self.detailFontSize))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -173,26 +173,42 @@ struct HistoryView: View {
     /// the row above becomes a `DisclosureGroup` that already lists every file individually.
     /// For "Subida" that's the bucket folder it landed in; for "Descarga" it's the bucket folder
     /// it came FROM plus the local folder it landed in — B2 side and Mac side, in that order.
-    private func detailLine(for record: OperationRecord) -> String? {
-        var parts: [String] = []
+    ///
+    /// Returns `Text`, not `String` — a plain `String` handed to `Text(_:)` always renders
+    /// verbatim (the well-known gotcha elsewhere in this app), so "de"/"desde" baked into a
+    /// joined String would never localize no matter what the catalog says. Building it as `Text`
+    /// concatenation keeps "de"/"desde" translatable while file names and paths (real user data,
+    /// correctly NOT meant to translate) stay verbatim since they're Text(variable) all along.
+    private func detailLine(for record: OperationRecord) -> Text? {
+        var parts: [Text] = []
         if record.items.count == 1, let name = record.items.first?.id {
-            parts.append(name)
+            parts.append(Text(name))
         }
         if record.type == "Subida", let remotePath = record.remotePath {
-            parts.append("→ \(remotePath)")
+            parts.append(Text("→ ") + Text(remotePath))
         }
         if record.type == "Descarga" {
             if let remotePath = record.remotePath {
-                parts.append("desde \(remotePath)")
+                parts.append(Text("desde ") + Text(remotePath))
             }
             if let localPath = record.localPath {
-                parts.append("→ \(localPath)")
+                parts.append(Text("→ ") + Text(localPath))
             }
         }
         if record.type == "Borrar", let remotePath = record.remotePath {
-            parts.append("de \(remotePath)")
+            parts.append(Text("de ") + Text(remotePath))
         }
-        return parts.isEmpty ? nil : parts.joined(separator: "  ")
+        if record.type == "Mover" || record.type == "Copiar" {
+            if let source = record.sourceRemotePath {
+                parts.append(Text("de ") + Text(source))
+            }
+            if let remotePath = record.remotePath {
+                parts.append(Text("→ ") + Text(remotePath))
+            }
+        }
+        guard var result = parts.first else { return nil }
+        for part in parts.dropFirst() { result = result + Text("  ") + part }
+        return result
     }
 
     private func sizeLabel(for record: OperationRecord) -> String {
