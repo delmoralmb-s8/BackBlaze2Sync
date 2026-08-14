@@ -118,6 +118,12 @@ final class RcloneManager: ObservableObject {
     @Published var pickerEntries: [RemoteEntry] = []
     @Published var isListingPicker = false
     @Published var verifyAfterUpload = false
+    // 0 = sin límite. Applied globally in run(arguments:) as --bwlimit/--transfers so every
+    // transfer command picks it up without threading it through each caller individually.
+    @Published var bandwidthLimitMBps: Double = 0
+    @Published var parallelTransfers: Int = 4
+    @Published var shutdownWhenDone = false
+    @Published var pendingShutdownConfirm = false
     @Published var verifyStatusMessage: String?
     // Kept separate from the message text itself instead of sniffing an emoji prefix out of a
     // string — the view renders the real success/fail state as a native SF Symbol, not a glyph
@@ -1360,6 +1366,21 @@ final class RcloneManager: ObservableObject {
         percent = 0
         speed = ""
         eta = ""
+        // Requires an explicit click on the confirmation alert (see ContentView) rather than an
+        // auto-firing countdown — shutting down the Mac is destructive, and a plain "did you mean
+        // to do this?" is both simpler and safer than a timer someone has to remember to cancel.
+        if shutdownWhenDone {
+            pendingShutdownConfirm = true
+        }
+    }
+
+    /// Runs via System Events (not a raw `shutdown` binary call, which needs root) — macOS will
+    /// ask the user to grant Automation permission the first time this fires.
+    func shutdownMac() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        task.arguments = ["-e", "tell application \"System Events\" to shut down"]
+        try? task.run()
     }
 
     /// Fans out `rclone size` across every item concurrently — needed before a multi-item
@@ -1453,7 +1474,11 @@ final class RcloneManager: ObservableObject {
     private func run(arguments: [String], completion: @escaping (Bool) -> Void) {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
-        task.arguments = Self.networkTimeoutArgs + arguments
+        var fullArgs = Self.networkTimeoutArgs + ["--transfers", "\(max(parallelTransfers, 1))"]
+        if bandwidthLimitMBps > 0 {
+            fullArgs += ["--bwlimit", "\(bandwidthLimitMBps)M"]
+        }
+        task.arguments = fullArgs + arguments
 
         let pipe = Pipe()
         task.standardOutput = pipe

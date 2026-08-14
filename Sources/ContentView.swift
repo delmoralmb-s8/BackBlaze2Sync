@@ -6,9 +6,6 @@ struct ContentView: View {
     @EnvironmentObject var connectionStore: ConnectionStore
     @Environment(\.openWindow) private var openWindow
 
-    @State private var confirmBeforeStart = true
-    @State private var shutdownWhenDone = false
-
     @State private var showNewConnectionSheet = false
     @State private var newConnName = ""
     @State private var newConnAccountID = ""
@@ -109,6 +106,12 @@ struct ContentView: View {
             if let active = connectionStore.active {
                 rclone.recordConnectionEvent(connected: true, name: connectionLabel(active))
             }
+        }
+        .alert("¿Apagar la Mac?", isPresented: $rclone.pendingShutdownConfirm) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Apagar ahora", role: .destructive) { rclone.shutdownMac() }
+        } message: {
+            Text("La operación terminó y tienes activado \"Apagar Mac cuando termine\".")
         }
     }
 
@@ -510,12 +513,31 @@ struct ContentView: View {
     // MARK: - Options
 
     private var optionsSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 10) {
             Toggle("Verificar integridad después de subir (compara tamaño local vs remoto)", isOn: $rclone.verifyAfterUpload)
-            Toggle("Mostrar confirmación antes de iniciar", isOn: $confirmBeforeStart)
-            Toggle("Apagar Mac cuando termine", isOn: $shutdownWhenDone)
-                .disabled(true)
-                .help("Pendiente de implementar, como pidió Bernabe para después")
+            Toggle("Apagar Mac cuando termine", isOn: $rclone.shutdownWhenDone)
+                .help("Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar")
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Límite de velocidad")
+                HStack {
+                    Slider(value: $rclone.bandwidthLimitMBps, in: 0...200, step: 5)
+                    Text(rclone.bandwidthLimitMBps > 0 ? "\(Int(rclone.bandwidthLimitMBps)) MB/s" : "Sin límite")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 70, alignment: .trailing)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Transferencias en paralelo")
+                Stepper(value: $rclone.parallelTransfers, in: 1...16) {
+                    Text("\(rclone.parallelTransfers)")
+                }
+                .help("Cuántos archivos sube/baja rclone a la vez dentro de una misma operación. Default de rclone: 4.")
+            }
         }
     }
 
