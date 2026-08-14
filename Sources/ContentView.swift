@@ -553,15 +553,19 @@ struct ContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Transferencias en paralelo")
+                HStack(spacing: 4) {
+                    Text("Transferencias en paralelo")
+                    // A hover-only .help() on the block itself wasn't discoverable — Bernabe never
+                    // found it. A visible "?" (same pattern as the path field's hint in
+                    // ExplorerView) at least shows there's something to hover over.
+                    Image(systemName: "questionmark.circle")
+                        .foregroundStyle(.secondary)
+                        .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
+                }
                 Stepper(value: $rclone.parallelTransfers, in: 1...16) {
                     Text("\(rclone.parallelTransfers)")
                 }
             }
-            // Moved from the Stepper itself: .help() on just the Stepper only ever triggered
-            // over its tiny up/down arrows on macOS, not the label or the number next to them —
-            // easy to miss entirely. On the whole block, hovering anywhere over it shows it.
-            .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
         }
     }
 
