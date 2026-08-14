@@ -835,6 +835,7 @@ final class RcloneManager: ObservableObject {
                         self?.moveItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)
                     }
                 }
+                self.maybeOfferShutdown()
                 completion(success)
             }
         }
@@ -945,6 +946,7 @@ final class RcloneManager: ObservableObject {
                         self?.copyItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)
                     }
                 }
+                self.maybeOfferShutdown()
                 completion(success)
             }
         }
@@ -983,6 +985,7 @@ final class RcloneManager: ObservableObject {
                         self?.downloadItems(items, toLocalFolder: toLocalFolder, recordHistory: recordHistory, trackFailure: trackFailure, completion: completion)
                     }
                 }
+                self.maybeOfferShutdown()
                 completion(success)
             }
         }
@@ -1026,8 +1029,12 @@ final class RcloneManager: ObservableObject {
                 }
             }
             if self.verifyAfterUpload {
-                self.verifySizes(pairs: pairs.map { (from: $0.from, to: $0.to) }) { completion(success) }
+                self.verifySizes(pairs: pairs.map { (from: $0.from, to: $0.to) }) {
+                    self.maybeOfferShutdown()
+                    completion(success)
+                }
             } else {
+                self.maybeOfferShutdown()
                 completion(success)
             }
         }
@@ -1366,16 +1373,23 @@ final class RcloneManager: ObservableObject {
         percent = 0
         speed = ""
         eta = ""
-        // Requires an explicit click on the confirmation alert (see ContentView) rather than an
-        // auto-firing countdown — shutting down the Mac is destructive, and a plain "did you mean
-        // to do this?" is both simpler and safer than a timer someone has to remember to cancel.
+    }
+
+    /// Called at the TRUE end of upload/move/copy/download — deliberately NOT from endBatch(),
+    /// because upload's own "verify integrity" step runs AFTER endBatch() but BEFORE the operation
+    /// is actually done. Firing the shutdown prompt from endBatch() would race: hitting "Apagar
+    /// ahora" could shut the Mac down mid-verification, before verifyStatusMessage ever appears.
+    private func maybeOfferShutdown() {
         if shutdownWhenDone {
             pendingShutdownConfirm = true
         }
     }
 
-    /// Runs via System Events (not a raw `shutdown` binary call, which needs root) — macOS will
-    /// ask the user to grant Automation permission the first time this fires.
+    /// Requires an explicit click on the confirmation alert (see ContentView) rather than an
+    /// auto-firing countdown — shutting down the Mac is destructive, and a plain "did you mean to
+    /// do this?" is both simpler and safer than a timer someone has to remember to cancel. Runs
+    /// via System Events (not a raw `shutdown` binary call, which needs root) — macOS will ask the
+    /// user to grant Automation permission the first time this fires.
     func shutdownMac() {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
