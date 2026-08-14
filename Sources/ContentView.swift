@@ -120,7 +120,7 @@ struct ContentView: View {
             Image(systemName: "power.circle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.red)
-            Text("Apagando la Mac en \(rclone.shutdownCountdown ?? 0)s")
+            (Text("Apagando la Mac en ") + Text("\(rclone.shutdownCountdown ?? 0)s"))
                 .font(.title3.bold())
             Text("La operación terminó y tienes activado \"Apagar Mac cuando termine\".")
                 .font(.callout)
@@ -543,7 +543,9 @@ struct ContentView: View {
                 Text("Límite de velocidad")
                 HStack {
                     Slider(value: $rclone.bandwidthLimitMBps, in: 0...200, step: 5)
-                    Text(rclone.bandwidthLimitMBps > 0 ? "\(Int(rclone.bandwidthLimitMBps)) MB/s" : "Sin límite")
+                    // ponytail: ternary-of-literals passed to Text(_:) resolves to the verbatim
+                    // String overload, not LocalizedStringKey — wrapping both branches is the fix.
+                    Text(rclone.bandwidthLimitMBps > 0 ? LocalizedStringKey("\(Int(rclone.bandwidthLimitMBps)) MB/s") : LocalizedStringKey("Sin límite"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(width: 70, alignment: .trailing)
@@ -555,8 +557,11 @@ struct ContentView: View {
                 Stepper(value: $rclone.parallelTransfers, in: 1...16) {
                     Text("\(rclone.parallelTransfers)")
                 }
-                .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
             }
+            // Moved from the Stepper itself: .help() on just the Stepper only ever triggered
+            // over its tiny up/down arrows on macOS, not the label or the number next to them —
+            // easy to miss entirely. On the whole block, hovering anywhere over it shows it.
+            .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
         }
     }
 

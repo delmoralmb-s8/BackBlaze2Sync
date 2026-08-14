@@ -365,6 +365,62 @@
         }
       }
     },
+    "Apagando la Mac en ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apagando la Mac en "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shutting down the Mac in "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desligando o Mac em "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extinction du Mac dans "
+          }
+        }
+      }
+    },
+    "Apagar Mac cuando termine": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apagar Mac cuando termine"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shut down Mac when done"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desligar o Mac ao terminar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éteindre le Mac une fois terminé"
+          }
+        }
+      }
+    },
     "Application Key de B2": {
       "localizations": {
         "en": {
@@ -2829,6 +2885,34 @@
         }
       }
     },
+    "La operación terminó y tienes activado \"Apagar Mac cuando termine\".": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La operación terminó y tienes activado \"Apagar Mac cuando termine\"."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The operation finished and you have \"Shut down Mac when done\" turned on."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A operação terminou e você tem \"Desligar o Mac ao terminar\" ativado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'opération est terminée et vous avez activé « Éteindre le Mac une fois terminé »."
+          }
+        }
+      }
+    },
     "Limpiar": {
       "localizations": {
         "en": {
@@ -2965,6 +3049,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Registo"
+          }
+        }
+      }
+    },
+    "Límite de velocidad": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite de velocidad"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed limit"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limite de velocidade"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limite de vitesse"
           }
         }
       }
@@ -3921,6 +4033,34 @@
         }
       }
     },
+    "Opciones avanzadas": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones avanzadas"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced options"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opções avançadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options avancées"
+          }
+        }
+      }
+    },
     "Para el link de descarga, captura una vez tus credenciales de B2 (se guardan en el Keychain de tu Mac):": {
       "localizations": {
         "en": {
@@ -4029,6 +4169,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ainda por implementar, o Bernabe pediu para deixar para depois"
+          }
+        }
+      }
+    },
+    "Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks for confirmation before actually shutting down — it won't shut down on its own without warning"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pede confirmação antes de desligar de verdade — não desliga sozinho sem avisar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demande une confirmation avant de vraiment s'éteindre — ne s'éteint jamais sans prévenir"
           }
         }
       }
@@ -4397,6 +4565,34 @@
         }
       }
     },
+    "Sin límite": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin límite"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No limit"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem limite"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans limite"
+          }
+        }
+      }
+    },
     "Sin resultados para \"%@\".": {
       "localizations": {
         "en": {
@@ -4677,6 +4873,34 @@
         }
       }
     },
+    "Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise it with a fast connection and lots of small files; lower it on weak or shared Wi-Fi. 4 is a good default."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aumente com conexão rápida e muitos arquivos pequenos; diminua em wi-fi fraco ou compartilhado. 4 é um bom padrão."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Augmentez-le avec une connexion rapide et beaucoup de petits fichiers ; baissez-le sur un Wi-Fi faible ou partagé. 4 est une bonne valeur par défaut."
+          }
+        }
+      }
+    },
     "Tamaño": {
       "localizations": {
         "en": {
@@ -4813,6 +5037,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ainda não há operações registadas."
+          }
+        }
+      }
+    },
+    "Transferencias en paralelo": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transferencias en paralelo"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parallel transfers"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transferências em paralelo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transferts en parallèle"
           }
         }
       }
@@ -5009,6 +5261,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verificar integridade"
+          }
+        }
+      }
+    },
+    "Verificar integridad después de subir (compara tamaño local vs remoto)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar integridad después de subir (compara tamaño local vs remoto)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify integrity after uploading (compares local vs. remote size)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar integridade após o upload (compara tamanho local com remoto)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier l'intégrité après l'envoi (compare la taille locale et distante)"
           }
         }
       }
