@@ -463,6 +463,12 @@ struct ExplorerView: View {
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: toolbarBodySize))
                     .foregroundStyle(.secondary)
+                    // Same fix as the parallel-transfers tooltip: a bare SF Symbol's hoverable
+                    // area is only its tight glyph bounds, easy to miss entirely — a real frame +
+                    // contentShape makes the whole visible circle (and the padding around it)
+                    // actually trigger .help().
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
                     .help("Escribe una ruta relativa dentro de \(connection.bucket) — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta")
                 Button("Ir") { goTo(pathInput) }
                     .font(.system(size: toolbarBodySize))
