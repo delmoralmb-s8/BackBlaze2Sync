@@ -555,7 +555,7 @@ struct ContentView: View {
                 Stepper(value: $rclone.parallelTransfers, in: 1...16) {
                     Text("\(rclone.parallelTransfers)")
                 }
-                .help("Cuántos archivos sube/baja rclone a la vez dentro de una misma operación. Default de rclone: 4.")
+                .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
             }
         }
     }
