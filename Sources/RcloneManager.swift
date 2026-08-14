@@ -123,7 +123,9 @@ final class RcloneManager: ObservableObject {
     @Published var bandwidthLimitMBps: Double = 0
     @Published var parallelTransfers: Int = 4
     @Published var shutdownWhenDone = false
-    @Published var pendingShutdownConfirm = false
+    // nil = no countdown running. Ticks down from 30; reaching 0 shuts down for real.
+    @Published var shutdownCountdown: Int?
+    private var shutdownTimer: Timer?
     @Published var verifyStatusMessage: String?
     // Kept separate from the message text itself instead of sniffing an emoji prefix out of a
     // string — the view renders the real success/fail state as a native SF Symbol, not a glyph
@@ -1377,19 +1379,40 @@ final class RcloneManager: ObservableObject {
 
     /// Called at the TRUE end of upload/move/copy/download — deliberately NOT from endBatch(),
     /// because upload's own "verify integrity" step runs AFTER endBatch() but BEFORE the operation
-    /// is actually done. Firing the shutdown prompt from endBatch() would race: hitting "Apagar
-    /// ahora" could shut the Mac down mid-verification, before verifyStatusMessage ever appears.
+    /// is actually done. Starting the countdown from endBatch() would race: it could reach 0 and
+    /// shut the Mac down mid-verification, before verifyStatusMessage ever appears.
     private func maybeOfferShutdown() {
-        if shutdownWhenDone {
-            pendingShutdownConfirm = true
+        guard shutdownWhenDone else { return }
+        shutdownCountdown = 30
+        shutdownTimer?.invalidate()
+        shutdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, let remaining = self.shutdownCountdown else { return }
+                if remaining <= 1 {
+                    self.shutdownTimer?.invalidate()
+                    self.shutdownTimer = nil
+                    self.shutdownCountdown = nil
+                    self.shutdownMac()
+                } else {
+                    self.shutdownCountdown = remaining - 1
+                }
+            }
         }
     }
 
-    /// Requires an explicit click on the confirmation alert (see ContentView) rather than an
-    /// auto-firing countdown — shutting down the Mac is destructive, and a plain "did you mean to
-    /// do this?" is both simpler and safer than a timer someone has to remember to cancel. Runs
-    /// via System Events (not a raw `shutdown` binary call, which needs root) — macOS will ask the
-    /// user to grant Automation permission the first time this fires.
+    /// The only way out of the countdown besides letting it hit 0 — meant for the sheet's
+    /// "Cancelar" button.
+    func cancelShutdownCountdown() {
+        shutdownTimer?.invalidate()
+        shutdownTimer = nil
+        shutdownCountdown = nil
+    }
+
+    /// Runs via System Events (not a raw `shutdown` binary call, which needs root) — macOS will
+    /// ask the user to grant Automation permission the first time this fires. No password needed
+    /// or stored: Apple Events aren't `sudo`, and a stored password would show up in `ps aux`
+    /// for anyone else on the machine to read as a process argument — worse than not having the
+    /// feature at all.
     func shutdownMac() {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")

@@ -107,12 +107,31 @@ struct ContentView: View {
                 rclone.recordConnectionEvent(connected: true, name: connectionLabel(active))
             }
         }
-        .alert("¿Apagar la Mac?", isPresented: $rclone.pendingShutdownConfirm) {
-            Button("Cancelar", role: .cancel) {}
-            Button("Apagar ahora", role: .destructive) { rclone.shutdownMac() }
-        } message: {
-            Text("La operación terminó y tienes activado \"Apagar Mac cuando termine\".")
+        .sheet(isPresented: Binding(
+            get: { rclone.shutdownCountdown != nil },
+            set: { if !$0 { rclone.cancelShutdownCountdown() } }
+        )) {
+            shutdownCountdownSheet
         }
+    }
+
+    private var shutdownCountdownSheet: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "power.circle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.red)
+            Text("Apagando la Mac en \(rclone.shutdownCountdown ?? 0)s")
+                .font(.title3.bold())
+            Text("La operación terminó y tienes activado \"Apagar Mac cuando termine\".")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Cancelar") { rclone.cancelShutdownCountdown() }
+                .keyboardShortcut(.cancelAction)
+        }
+        .padding(30)
+        .frame(width: 320)
+        .environment(\.locale, Locale(identifier: appLanguageCode))
     }
 
     // MARK: - rclone missing
