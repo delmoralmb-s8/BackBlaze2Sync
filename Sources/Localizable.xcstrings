@@ -533,30 +533,30 @@
         }
       }
     },
-    "B2 no guarda carpetas vacías — estas no van a aparecer del otro lado:\n%@": {
+    "B2 no guarda carpetas vacías. No van a aparecer del otro lado:\n%@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "B2 doesn't store empty folders — these won't show up on the other side:\n%@"
+            "value": "B2 doesn't store empty folders. They won't show up on the other side:\n%@"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "B2 no guarda carpetas vacías — estas no van a aparecer del otro lado:\n%@"
+            "value": "B2 no guarda carpetas vacías. No van a aparecer del otro lado:\n%@"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "B2 ne conserve pas les dossiers vides — ceux-ci n'apparaîtront pas de l'autre côté :\n%@"
+            "value": "B2 ne conserve pas les dossiers vides. Ils n'apparaîtront pas de l'autre côté :\n%@"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "A B2 não guarda pastas vazias — estas não vão aparecer do outro lado:\n%@"
+            "value": "A B2 não guarda pastas vazias. Elas não vão aparecer do outro lado:\n%@"
           }
         }
       }
@@ -2241,30 +2241,30 @@
         }
       }
     },
-    "Escribe una ruta relativa dentro de %@ — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta": {
+    "Escribe una ruta relativa dentro de %@, sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Type a path relative to %@ — no bucket name or \":\". Example: folder/subfolder"
+            "value": "Type a path relative to %@, no bucket name or \":\". Example: folder/subfolder"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escribe una ruta relativa dentro de %@ — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta"
+            "value": "Escribe una ruta relativa dentro de %@, sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tapez un chemin relatif à %@ — sans le nom du bucket ni \":\". Exemple : dossier/sous-dossier"
+            "value": "Tapez un chemin relatif à %@, sans le nom du bucket ni \":\". Exemple : dossier/sous-dossier"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Digite um caminho relativo a %@ — sem o nome do bucket nem \":\". Exemplo: pasta/subpasta"
+            "value": "Digite um caminho relativo a %@, sem o nome do bucket nem \":\". Exemplo: pasta/subpasta"
           }
         }
       }
@@ -3669,58 +3669,58 @@
         }
       }
     },
-    "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo.": {
+    "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída. Inténtalo de nuevo.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't generate the download link. Your connection might be slow or down — try again."
+            "value": "Couldn't generate the download link. Your connection might be slow or down. Try again."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+            "value": "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída. Inténtalo de nuevo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossible de générer le lien de téléchargement. Votre connexion est peut-être lente ou coupée — réessayez."
+            "value": "Impossible de générer le lien de téléchargement. Votre connexion est peut-être lente ou coupée. Réessayez."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível gerar o link de download. Sua conexão pode estar lenta ou fora do ar — tente de novo."
+            "value": "Não foi possível gerar o link de download. Sua conexão pode estar lenta ou fora do ar. Tente de novo."
           }
         }
       }
     },
-    "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo.": {
+    "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída. Inténtalo de nuevo.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couldn't generate the browser link. Your connection might be slow or down — try again."
+            "value": "Couldn't generate the browser link. Your connection might be slow or down. Try again."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+            "value": "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída. Inténtalo de nuevo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossible de générer le lien pour le navigateur. Votre connexion est peut-être lente ou coupée — réessayez."
+            "value": "Impossible de générer le lien pour le navigateur. Votre connexion est peut-être lente ou coupée. Réessayez."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível gerar o link para abrir no navegador. Sua conexão pode estar lenta ou fora do ar — tente de novo."
+            "value": "Não foi possível gerar o link para abrir no navegador. Sua conexão pode estar lenta ou fora do ar. Tente de novo."
           }
         }
       }
@@ -4201,30 +4201,30 @@
         }
       }
     },
-    "Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar": {
+    "Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar"
+            "value": "Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Asks for confirmation before actually shutting down — it won't shut down on its own without warning"
+            "value": "Asks for confirmation before actually shutting down, it won't shut down on its own without warning"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pede confirmação antes de desligar de verdade — não desliga sozinho sem avisar"
+            "value": "Pede confirmação antes de desligar de verdade, não desliga sozinho sem avisar"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Demande une confirmation avant de vraiment s'éteindre — ne s'éteint jamais sans prévenir"
+            "value": "Demande une confirmation avant de vraiment s'éteindre, ne s'éteint jamais sans prévenir"
           }
         }
       }
@@ -4985,30 +4985,30 @@
         }
       }
     },
-    "Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse.": {
+    "Te va a pedir tu contraseña de Mac: es normal, Homebrew la necesita para instalarse.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "It'll ask for your Mac password — that's normal, Homebrew needs it to install itself."
+            "value": "It'll ask for your Mac password: that's normal, Homebrew needs it to install itself."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse."
+            "value": "Te va a pedir tu contraseña de Mac: es normal, Homebrew la necesita para instalarse."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "On vous demandera votre mot de passe Mac — c'est normal, Homebrew en a besoin pour s'installer."
+            "value": "On vous demandera votre mot de passe Mac : c'est normal, Homebrew en a besoin pour s'installer."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vai pedir sua senha do Mac — é normal, o Homebrew precisa dela para se instalar."
+            "value": "Vai pedir sua senha do Mac: é normal, o Homebrew precisa dela para se instalar."
           }
         }
       }

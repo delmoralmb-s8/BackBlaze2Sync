@@ -469,7 +469,7 @@ struct ExplorerView: View {
                     // actually trigger .help().
                     .frame(width: 20, height: 20)
                     .contentShape(Rectangle())
-                    .help("Escribe una ruta relativa dentro de \(connection.bucket) — sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta")
+                    .help("Escribe una ruta relativa dentro de \(connection.bucket), sin el nombre del bucket ni \":\". Ejemplo: carpeta/subcarpeta")
                 Button("Ir") { goTo(pathInput) }
                     .font(.system(size: toolbarBodySize))
                     .disabled(rclone.isListingRemote || rclone.isRunning)
@@ -661,7 +661,7 @@ struct ExplorerView: View {
                 // ponytail: keep the dynamic folder list (data) out of the literal, but interpolate
                 // it inline so the fixed lead sentence still localizes instead of riding along
                 // verbatim inside a pre-built String.
-                Text("B2 no guarda carpetas vacías — estas no van a aparecer del otro lado:\n\(emptyFoldersPreview)")
+                Text("B2 no guarda carpetas vacías. No van a aparecer del otro lado:\n\(emptyFoldersPreview)")
             }
             .confirmationDialog(
                 fileActionDialogTitle,
@@ -1668,7 +1668,7 @@ struct ExplorerView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(result.mismatches) { mismatch in
-                                Text("\(mismatch.relativePath) — \(mismatch.reason)")
+                                Text("\(mismatch.relativePath): \(mismatch.reason)")
                                     .font(.caption)
                                     .textSelection(.enabled)
                             }
@@ -1821,7 +1821,7 @@ struct ExplorerView: View {
             isGeneratingViewLink = false
             shareViewLink = link
             if link == nil {
-                shareLinkErrorMessage = "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+                shareLinkErrorMessage = "No se pudo generar el link para ver en el navegador. Puede que la conexión esté lenta o caída. Inténtalo de nuevo."
             }
         }
         generateDownloadLinkIfPossible(generation: generation)
@@ -1848,7 +1848,7 @@ struct ExplorerView: View {
             isGeneratingDownloadLink = false
             shareDownloadLink = link
             if link == nil {
-                shareLinkErrorMessage = "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída — inténtalo de nuevo."
+                shareLinkErrorMessage = "No se pudo generar el link de descarga. Puede que la conexión esté lenta o caída. Inténtalo de nuevo."
             }
         }
     }

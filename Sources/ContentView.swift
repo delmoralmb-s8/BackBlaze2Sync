@@ -24,6 +24,14 @@ struct ContentView: View {
 
     @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
+    // Names stay in each language's own tongue on purpose, regardless of appLanguageCode.
+    private static let languageOptions: [(code: String, short: String, name: String)] = [
+        ("es", "ES", "Español"),
+        ("en", "EN", "English"),
+        ("pt", "PT", "Português"),
+        ("fr", "FR", "Français"),
+    ]
+
     var body: some View {
         if rclone.rclonePath == nil {
             rcloneMissingView
@@ -156,7 +164,7 @@ struct ContentView: View {
                     Text("Paso 1: instalar Homebrew (gestor de paquetes de macOS)")
                         .font(.callout.bold())
                     commandRow("/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
-                    Text("Te va a pedir tu contraseña de Mac — es normal, Homebrew la necesita para instalarse.")
+                    Text("Te va a pedir tu contraseña de Mac: es normal, Homebrew la necesita para instalarse.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -344,17 +352,24 @@ struct ContentView: View {
                 }
                 .help("Historial de operaciones")
 
-                // ponytail: plain Picker writing straight to the @AppStorage key is all the
-                // "language switcher" needs — BackBlaze2SyncApp reads the same key and re-applies
-                // .environment(\.locale) on change, so no extra plumbing lives here.
-                Picker("", selection: $appLanguageCode) {
-                    Text("ES").tag("es")
-                    Text("EN").tag("en")
-                    Text("PT").tag("pt")
-                    Text("FR").tag("fr")
+                // ponytail: .help() never shows up on Picker(.menu) rows on macOS — SwiftUI turns
+                // them into plain NSMenuItems, which don't wire up tooltips. A Menu of Buttons
+                // lets each row show its own full language name directly instead, no hover needed.
+                Menu {
+                    ForEach(Self.languageOptions, id: \.code) { option in
+                        Button {
+                            appLanguageCode = option.code
+                        } label: {
+                            if appLanguageCode == option.code {
+                                Label("\(option.short)  \(option.name)", systemImage: "checkmark")
+                            } else {
+                                Text("\(option.short)  \(option.name)")
+                            }
+                        }
+                    }
+                } label: {
+                    Text(appLanguageCode.uppercased())
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
                 .frame(width: 78)
                 .help("Idioma")
             }
@@ -535,7 +550,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Verificar integridad después de subir (compara tamaño local vs remoto)", isOn: $rclone.verifyAfterUpload)
             Toggle("Apagar Mac cuando termine", isOn: $rclone.shutdownWhenDone)
-                .help("Pide confirmación antes de apagar de verdad — no se apaga solo sin avisar")
+                .help("Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar")
 
             Divider()
 

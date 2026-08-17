@@ -773,6 +773,11 @@ final class RcloneManager: ObservableObject {
     // MARK: - Create folder
 
     func createFolder(at basePath: String, name: String, completion: @escaping (Bool) -> Void) {
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { completion(false); return }
         let full = Self.destPath(basePath, trimmed)
@@ -790,7 +795,12 @@ final class RcloneManager: ObservableObject {
     // MARK: - Delete
 
     func deleteItems(_ items: [RemotePathItem], completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, !items.isEmpty else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard !items.isEmpty else { completion(false); return }
         lastResult = nil
         for item in items {
             invalidateCache(path: Self.parentPath(of: item.path))
@@ -824,7 +834,12 @@ final class RcloneManager: ObservableObject {
     // MARK: - Move (destructive: deletes the source)
 
     func moveItems(_ items: [RemotePathItem], toBase: String, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, !items.isEmpty else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard !items.isEmpty else { completion(false); return }
         lastResult = nil
         isRunning = true
         let pairs = items.map { (from: $0.path, to: Self.destPath(toBase, $0.name), isDir: $0.isDir) }
@@ -859,8 +874,13 @@ final class RcloneManager: ObservableObject {
 
     /// Renames within the same parent folder — just a move to a sibling path with a new name.
     func renameItem(_ item: RemotePathItem, to newName: String, completion: @escaping (Bool) -> Void = { _ in }) {
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
         let trimmed = newName.trimmingCharacters(in: .whitespaces)
-        guard !isRunning, !trimmed.isEmpty, trimmed != item.name else { completion(false); return }
+        guard !trimmed.isEmpty, trimmed != item.name else { completion(false); return }
         let newPath = Self.destPath(Self.parentPath(of: item.path), trimmed)
         lastResult = nil
         invalidateCache(path: Self.parentPath(of: item.path))
@@ -943,7 +963,12 @@ final class RcloneManager: ObservableObject {
     // so copy-within-B2, download-to-Mac and upload-from-Mac all reuse the same engine.
 
     func copyItems(_ items: [RemotePathItem], toBase: String, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, !items.isEmpty else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard !items.isEmpty else { completion(false); return }
         lastResult = nil
         isRunning = true
         let pairs = items.map { (from: $0.path, to: Self.destPath(toBase, $0.name), isDir: $0.isDir) }
@@ -976,7 +1001,12 @@ final class RcloneManager: ObservableObject {
     }
 
     func downloadItems(_ items: [RemotePathItem], toLocalFolder: String, recordHistory: Bool = true, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, !items.isEmpty else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard !items.isEmpty else { completion(false); return }
         lastResult = nil
         isRunning = true
         let startedAt = Date()
@@ -1015,7 +1045,12 @@ final class RcloneManager: ObservableObject {
     }
 
     func uploadLocalPaths(_ localPaths: [String], toRemoteFolder: String, recordHistory: Bool = true, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, !localPaths.isEmpty else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard !localPaths.isEmpty else { completion(false); return }
         lastResult = nil
         verifyStatusMessage = nil
         let startedAt = Date()
@@ -1052,7 +1087,12 @@ final class RcloneManager: ObservableObject {
                 }
             }
             if self.verifyAfterUpload {
+                // run()'s terminationHandler already cleared isRunning for the transfer itself —
+                // re-raise it for the verify pass so a second upload can't start mid-comparison
+                // and have its own verifyStatusMessage overwritten by this one finishing late.
+                self.isRunning = true
                 self.verifySizes(pairs: pairs.map { (from: $0.from, to: $0.to) }) {
+                    self.isRunning = false
                     self.maybeOfferShutdown()
                     completion(success)
                 }
@@ -1068,7 +1108,12 @@ final class RcloneManager: ObservableObject {
     // uses), uploads the .zip next to the original folder, then cleans up the temp copy).
 
     func compressFolder(_ item: RemotePathItem, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, item.isDir else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard item.isDir else { completion(false); return }
         lastResult = nil
         let tempDir = NSTemporaryDirectory() + "b2sync-zip-" + UUID().uuidString
         let localFolder = Self.destPath(tempDir, item.name)
@@ -1112,8 +1157,12 @@ final class RcloneManager: ObservableObject {
             let bytesBefore = Int64(originalEntries.reduce(0.0) { $0 + $1.megabytes } * 1_048_576)
 
             self.log("Comprimiendo \(item.name).zip…")
+            // ditto runs outside run()'s isRunning bookkeeping — bracket it manually so a second
+            // operation can't slip in between the download finishing and the upload starting.
+            self.isRunning = true
             self.zipFolder(at: localFolder, to: zipPath) { [weak self] zipOK in
                 guard let self else { completion(false); return }
+                self.isRunning = false
                 guard zipOK else {
                     self.log("[ERROR] No se pudo comprimir la carpeta.")
                     try? FileManager.default.removeItem(atPath: tempDir)
@@ -1155,7 +1204,12 @@ final class RcloneManager: ObservableObject {
     /// download+zip machinery as compressFolder, but the result stays on the Mac instead of being
     /// uploaded back to B2. Used by the Gallery's "Descargar carpeta como .zip".
     func downloadFolderAsZip(_ item: RemotePathItem, completion: @escaping (Bool) -> Void = { _ in }) {
-        guard !isRunning, item.isDir else { completion(false); return }
+        guard !isRunning else {
+            log("[WARN] Ya hay una operación en curso, espera a que termine.")
+            completion(false)
+            return
+        }
+        guard item.isDir else { completion(false); return }
         let tempDir = NSTemporaryDirectory() + "b2sync-dlzip-" + UUID().uuidString
         let localFolder = Self.destPath(tempDir, item.name)
         let zipPath = tempDir + "/" + item.name + ".zip"
@@ -1181,8 +1235,11 @@ final class RcloneManager: ObservableObject {
                 return
             }
             self.log("Comprimiendo \(item.name).zip…")
+            // Same manual bracket as compressFolder — ditto isn't covered by run()'s isRunning.
+            self.isRunning = true
             self.zipFolder(at: localFolder, to: zipPath) { [weak self] zipOK in
                 guard let self else { completion(false); return }
+                self.isRunning = false
                 defer { try? FileManager.default.removeItem(atPath: tempDir) }
                 guard zipOK else {
                     self.log("[ERROR] No se pudo comprimir la carpeta.")
@@ -1560,8 +1617,13 @@ final class RcloneManager: ObservableObject {
         task.terminationHandler = { [weak self] proc in
             pipe.fileHandleForReading.readabilityHandler = nil
             Task { @MainActor in
-                self?.isRunning = false
-                self?.process = nil
+                // ponytail: an unguarded caller (e.g. createFolder) could slip in and start its own
+                // run() while this one is still active — only clear shared state if we're still
+                // the current process, so we never stomp a newer operation's isRunning/Cancelar.
+                if self?.process === task {
+                    self?.isRunning = false
+                    self?.process = nil
+                }
                 completion(proc.terminationStatus == 0)
             }
         }
