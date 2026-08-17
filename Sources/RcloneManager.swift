@@ -73,6 +73,15 @@ struct FailedOperation: Identifiable {
     let retry: () -> Void
 }
 
+/// An upload requested while another upload was already running. Only uploads queue behind
+/// uploads on purpose: a rename/move/copy/etc still rejects a same-time upload outright.
+struct PendingUpload: Identifiable {
+    let id: UUID
+    let date: Date
+    let summary: String
+    let execute: () -> Void
+}
+
 struct OperationRecord: Codable, Identifiable {
     let id: UUID
     let date: Date
@@ -140,6 +149,10 @@ final class RcloneManager: ObservableObject {
     @Published var verifyStatusSuccess = false
     @Published private(set) var history: [OperationRecord] = []
     @Published private(set) var failedOperations: [FailedOperation] = []
+    @Published private(set) var pendingUploads: [PendingUpload] = []
+    // ponytail: separate from isRunning on purpose, so an upload only queues behind another
+    // upload, not behind a rename/move/etc, which still reject a same-time upload outright.
+    private var isUploading = false
     /// The Explorer's current relative browse path, mirrored here so a new Gallery window can
     /// open at the same folder instead of always starting at the bucket root.
     @Published var explorerPath = ""
@@ -302,6 +315,17 @@ final class RcloneManager: ObservableObject {
 
     func dismissFailedOperation(_ id: UUID) {
         failedOperations.removeAll { $0.id == id }
+    }
+
+    // MARK: - Pending uploads (queued while another upload was already running)
+
+    private func drainUploadQueue() {
+        guard !pendingUploads.isEmpty else { return }
+        pendingUploads.removeFirst().execute()
+    }
+
+    func dismissPendingUpload(_ id: UUID) {
+        pendingUploads.removeAll { $0.id == id }
     }
 
     /// Walks a dropped/selected local path (file or folder) into its individual files with sizes,
@@ -1046,11 +1070,20 @@ final class RcloneManager: ObservableObject {
 
     func uploadLocalPaths(_ localPaths: [String], toRemoteFolder: String, recordHistory: Bool = true, trackFailure: Bool = true, completion: @escaping (Bool) -> Void = { _ in }) {
         guard !isRunning else {
-            log("[WARN] Ya hay una operación en curso, espera a que termine.")
-            completion(false)
+            guard isUploading else {
+                log("[WARN] Ya hay una operación en curso, espera a que termine.")
+                completion(false)
+                return
+            }
+            let summary = "\(localPaths.count) elemento(s) → \(toRemoteFolder)"
+            log("[INFO] En cola: \(summary), esperando a que termine la subida actual.")
+            pendingUploads.append(PendingUpload(id: UUID(), date: Date(), summary: summary) { [weak self] in
+                self?.uploadLocalPaths(localPaths, toRemoteFolder: toRemoteFolder, recordHistory: recordHistory, trackFailure: trackFailure, completion: completion)
+            })
             return
         }
         guard !localPaths.isEmpty else { completion(false); return }
+        isUploading = true
         lastResult = nil
         verifyStatusMessage = nil
         let startedAt = Date()
@@ -1087,16 +1120,20 @@ final class RcloneManager: ObservableObject {
                 }
             }
             if self.verifyAfterUpload {
-                // run()'s terminationHandler already cleared isRunning for the transfer itself —
+                // run()'s terminationHandler already cleared isRunning for the transfer itself,
                 // re-raise it for the verify pass so a second upload can't start mid-comparison
                 // and have its own verifyStatusMessage overwritten by this one finishing late.
                 self.isRunning = true
                 self.verifySizes(pairs: pairs.map { (from: $0.from, to: $0.to) }) {
                     self.isRunning = false
+                    self.isUploading = false
+                    self.drainUploadQueue()
                     self.maybeOfferShutdown()
                     completion(success)
                 }
             } else {
+                self.isUploading = false
+                self.drainUploadQueue()
                 self.maybeOfferShutdown()
                 completion(success)
             }
@@ -1455,11 +1492,13 @@ final class RcloneManager: ObservableObject {
         eta = ""
     }
 
-    /// Called at the TRUE end of upload/move/copy/download — deliberately NOT from endBatch(),
+    /// Called at the TRUE end of upload/move/copy/download, deliberately NOT from endBatch(),
     /// because upload's own "verify integrity" step runs AFTER endBatch() but BEFORE the operation
     /// is actually done. Starting the countdown from endBatch() would race: it could reach 0 and
     /// shut the Mac down mid-verification, before verifyStatusMessage ever appears.
     private func maybeOfferShutdown() {
+        // A queued upload still ahead means the operation isn't really "done" yet.
+        guard pendingUploads.isEmpty else { return }
         guard shutdownWhenDone else { return }
         shutdownCountdown = 30
         shutdownTimer?.invalidate()

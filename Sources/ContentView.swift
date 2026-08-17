@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var showOptionsPopover = false
     @State private var logExpanded = false
     @State private var errorsExpanded = false
+    @State private var pendingUploadsExpanded = false
 
     @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
@@ -66,6 +67,17 @@ struct ContentView: View {
                             Text("Errores (\(rclone.failedOperations.count))")
                                 .font(.headline)
                                 .foregroundStyle(.red)
+                        }
+
+                        Divider()
+                    }
+
+                    if !rclone.pendingUploads.isEmpty {
+                        DisclosureGroup(isExpanded: $pendingUploadsExpanded) {
+                            pendingUploadsSection.padding(.top, 8)
+                        } label: {
+                            Text("En cola (\(rclone.pendingUploads.count))")
+                                .font(.headline)
                         }
 
                         Divider()
@@ -638,6 +650,36 @@ struct ContentView: View {
                 }
                 .padding(10)
                 .background(Color.red.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    // MARK: - Pending uploads (queued while another upload was already running)
+
+    private var pendingUploadsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(rclone.pendingUploads) { pending in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Label("Subida en cola", systemImage: "clock.badge.checkmark")
+                            .font(.callout)
+                            .bold()
+                        Spacer()
+                        Text(pending.date.formatted(date: .abbreviated, time: .standard))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(pending.summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    HStack {
+                        Spacer()
+                        Button("Cancelar") { rclone.dismissPendingUpload(pending.id) }
+                    }
+                }
+                .padding(10)
+                .background(Color.blue.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
