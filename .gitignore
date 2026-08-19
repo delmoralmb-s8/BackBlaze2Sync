@@ -6,3 +6,4 @@ NathansB2Sync.app/
 .build/
 DerivedData/
 *.xcuserstate
+dist/
