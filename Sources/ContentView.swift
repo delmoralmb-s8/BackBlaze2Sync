@@ -19,6 +19,7 @@ struct ContentView: View {
 
     @State private var explorerExpanded = true
     @State private var showOptionsPopover = false
+    @State private var showParallelTransfersHelp = false
     @State private var logExpanded = false
     @State private var errorsExpanded = false
     @State private var pendingUploadsExpanded = false
@@ -582,12 +583,22 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Text("Transferencias en paralelo")
-                    // A hover-only .help() on the block itself wasn't discoverable — Bernabe never
-                    // found it. A visible "?" (same pattern as the path field's hint in
-                    // ExplorerView) at least shows there's something to hover over.
-                    Image(systemName: "questionmark.circle")
-                        .foregroundStyle(.secondary)
-                        .help("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
+                    // A hover-only tooltip wasn't discoverable, and hover itself feels unreliable
+                    // on a trackpad, so this is a real click target that pops the explanation up
+                    // on demand instead of waiting for a hover that may never register.
+                    Button {
+                        showParallelTransfersHelp = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showParallelTransfersHelp) {
+                        Text("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
+                            .font(.callout)
+                            .padding()
+                            .frame(width: 260)
+                    }
                 }
                 Stepper(value: $rclone.parallelTransfers, in: 1...16) {
                     Text("\(rclone.parallelTransfers)")

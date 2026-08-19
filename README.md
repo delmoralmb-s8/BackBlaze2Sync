@@ -1,38 +1,40 @@
 # BackBlaze2Sync
 
-App nativa de macOS (SwiftUI) para usar Backblaze B2 sin terminal. Por debajo usa `rclone` pero el usuario nunca ve un comando.
+Native macOS app (SwiftUI) to use Backblaze B2 with a graphic interface. 
 
-## Por que no es solo otro Cyberduck
+## Yeah, I'm aware  Cyberduck already exists
 
-Cyberduck y apps parecidas dan acceso a muchos proveedores de nube, pero de forma generica. BackBlaze2Sync se enfoca solo en Backblaze B2 para ofrecer cosas que un cliente generico no tiene:
+Cyberduck is great and everything, it already provides access to many services but in a generic way. I wanted BackBlaze2Sync to focus solely on Backblaze B2 to offer things that a generic client doesn't have:
 
-- Historial de operaciones con detalle por archivo:  nombre, tamaño, exito o falla. 
-- Busqueda difusa por carpeta o en toda la raíz del bucket. 
-- Galeria de fotos integrada con vista de miniaturas y visor a pantalla completa.
-- Comprimir una carpeta remota a .zip sin requerir descarga a mano. 
-- Verificacion de integridad automatica despues de subir un archivo.
-- Links de descarga que fuerzan "Guardar archivo" en vez de abrirlo direecto en el navegador.
+- Operation history with per-file details such as name, size, success or failure, folder movements sorted by days and hours.
+- Fuzzy search by folder or across the entire bucket root.
+- Integrated photo gallery with thumbnail view and full-screen viewer.
+- Compress a remote folder to .zip without requiring manual download.
+- Automatic integrity verification after uploading a file.
+- Download links that force "Save file" instead of opening directly in the browser. (Option to customize expiration days)
+- General usage statistics (In development).
 
-## Funciones principales
 
-- Explorador de B2 tipo Finder: vista de iconos y vista de lista con arbol expandible.
-- Subir, bajar, mover, copiar y borrar archivos y carpetas, con confirmacion antes de acciones destructivas.
-- Arrastrar y soltar desde Finder o dentro del mismo explorador.
-- Multiples conexiones B2 (varias cuentas o buckets).
-- Generar links para compartir archivos, con fecha de expiracion.
+## Main features
 
-## Requisitos
+- B2 Finder-style explorer: icon view and list view with expandable tree.
+- Upload, download, move, copy, and delete files and folders, with confirmation before destructive actions.
+- Drag and drop from Finder into the app or within the same explorer.
+- Multiple B2 connections (multiple accounts or buckets).
+- Generate shareable links for files with expiration date.
 
-- macOS 14 o superior.
+## Requirements
+
+- macOS 14 or later.
 - Xcode.
-- [rclone](https://rclone.org/) instalado con Homebrew: `brew install rclone`. La app lo detecta solo (Apple Silicon, Intel o vía PATH); si no lo encuentra, muestra el comando exacto para instalarlo al abrir.
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) para generar el proyecto de Xcode.
+- [rclone](https://rclone.org/) installed via Homebrew: `brew install rclone`. The app detects it automatically (Apple Silicon, Intel, or via PATH); if not found, it shows the exact command to install it when launched.
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) to generate the Xcode project.
 
-## Como compilar
+## How to build
 
-El `-destination "generic/platform=macOS"` es necesario para que el build sea universal
-(Apple Silicon + Intel) — sin él, `xcodebuild` compila solo para la arquitectura de la Mac
-donde corres el comando.
+The `-destination "generic/platform=macOS"` is required so the build is universal
+(Apple Silicon + Intel) — without it, `xcodebuild` compiles only for the architecture
+of the Mac where you run the command.
 
 ```bash
 xcodegen generate
@@ -40,17 +42,10 @@ xcodebuild -project BackBlaze2Sync.xcodeproj -scheme BackBlaze2Sync -configurati
   -destination "generic/platform=macOS" build
 ```
 
-Para confirmar que el binario resultante sí es universal:
+## Screenshots
 
-```bash
-lipo -info BackBlaze2Sync.app/Contents/MacOS/BackBlaze2Sync
-# debe decir: Architectures in the fat file: ... are: x86_64 arm64
-```
-
-## Estado del proyecto
-
-Es un proyecto personal en desarrollo activo. No esta firmado para distribucion fuera de esta Mac ni pensado para la App Store.
-
-## Capturas
-
-_Pendiente: agregar capturas del explorador, la galeria y el historial._
+| | |
+|---|---|
+| ![Empty state](screenshots/empty-state.jpg) | ![New connection](screenshots/new-connection.jpg) |
+| ![Explorer](screenshots/explorer.jpg) | ![Photo gallery](screenshots/gallery.jpg) |
+| ![About](screenshots/about.jpg) | |
