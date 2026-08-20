@@ -52,6 +52,13 @@ struct BackBlaze2SyncApp: App {
                 .onAppear { appearanceIconController.start() }
         }
         .commands {
+            // Replaces the default generic "About BackBlaze2Sync" with the same standard panel,
+            // just adding a credits line, no custom window needed for something this simple.
+            CommandGroup(replacing: .appInfo) {
+                Button("Acerca de BackBlaze2Sync") {
+                    showAboutPanel()
+                }
+            }
             // Mirrors what already exists as toolbar buttons in ContentView/ExplorerView, just
             // made reachable (and discoverable) from the menu bar too, next to "New Window".
             CommandGroup(after: .newItem) {
@@ -119,5 +126,27 @@ struct BackBlaze2SyncApp: App {
                 .padding(20)
                 .frame(width: 380)
         }
+    }
+
+    /// Same standard macOS About panel every app gets for free, just with a credits line added,
+    /// no reason to build a custom SwiftUI window for two lines of text and a link.
+    private func showAboutPanel() {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        let font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+
+        let credits = NSMutableAttributedString(
+            string: "Hecho por Bernabe\n",
+            attributes: [.font: font, .paragraphStyle: paragraphStyle]
+        )
+        credits.append(NSAttributedString(
+            string: "github.com/delmoralmb-s8/BackBlaze2Sync",
+            attributes: [
+                .font: font,
+                .paragraphStyle: paragraphStyle,
+                .link: URL(string: "https://github.com/delmoralmb-s8/BackBlaze2Sync")!
+            ]
+        ))
+        NSApplication.shared.orderFrontStandardAboutPanel(options: [.credits: credits])
     }
 }
