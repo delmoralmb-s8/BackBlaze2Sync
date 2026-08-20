@@ -79,13 +79,22 @@ struct BackBlaze2SyncApp: App {
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
             }
-            // Opens another instance of the main window, which macOS merges into a tab of the
-            // existing one automatically when the system's tab preference allows it, same as
-            // any other native window-per-WindowGroup SwiftUI app.
+            // openWindow(id:) alone only opens a plain new window and leaves tab-merging up to
+            // the system's "Prefer tabs" setting, which defaults to not tabbing. Forcing it into
+            // an actual tab regardless of that setting needs the AppKit call directly.
             CommandGroup(after: .toolbar) {
                 Divider()
                 Button("Nueva pestaña") {
+                    let existing = Set(NSApp.windows.map(ObjectIdentifier.init))
+                    let host = NSApp.keyWindow
                     openWindow(id: "main")
+                    DispatchQueue.main.async {
+                        guard let host,
+                              let newWindow = NSApp.windows.first(where: { !existing.contains(ObjectIdentifier($0)) })
+                        else { return }
+                        host.addTabbedWindow(newWindow, ordered: .above)
+                        newWindow.makeKeyAndOrderFront(nil)
+                    }
                 }
                 .keyboardShortcut("t", modifiers: .command)
             }
