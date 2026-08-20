@@ -5,6 +5,11 @@ extension Notification.Name {
     /// Posted by the menu bar's "Nueva conexión B2…" command so ContentView (which owns the sheet's
     /// @State) can react without the App scene needing direct access to that state.
     static let bb2sNewConnection = Notification.Name("mx.smh.backblaze2sync.newConnection")
+    /// Same idea for the Edición-menu "Mover/Copiar selección" commands, which need to reach
+    /// ExplorerView's own @State selection. A @FocusedValue-based .disabled() was tried first and
+    /// crashed AppKit (see the comment at its onReceive site), so this is the stable fallback.
+    static let bb2sMoveSelection = Notification.Name("mx.smh.backblaze2sync.moveSelection")
+    static let bb2sCopySelection = Notification.Name("mx.smh.backblaze2sync.copySelection")
 }
 
 // The AppIcon.appiconset shipped in the asset catalog only covers the light appearance — Xcode's
@@ -33,7 +38,6 @@ struct BackBlaze2SyncApp: App {
     @StateObject private var connectionStore = ConnectionStore()
     private let appearanceIconController = AppearanceIconController()
     @Environment(\.openWindow) private var openWindow
-    @FocusedValue(\.explorerMenuActions) private var explorerMenuActions
 
     // Same key ContentView's picker writes to — @AppStorage here re-runs `body` on change,
     // so every WindowGroup below re-applies `.environment(\.locale)` with the new value.
@@ -60,20 +64,20 @@ struct BackBlaze2SyncApp: App {
                     openWindow(id: "history")
                 }
             }
-            // Reaches ExplorerView's own selection through ExplorerMenuActions (FocusedValue),
-            // the Commands closure runs at the App scene, which has no direct access to it.
+            // Reaches ExplorerView's own selection via NotificationCenter, the Commands closure
+            // runs at the App scene, which has no direct access to that @State. Always enabled
+            // (see ExplorerView's onReceive for why: a @FocusedValue-driven .disabled() here
+            // crashed AppKit's menu system whenever the enabled state changed).
             CommandGroup(after: .pasteboard) {
                 Divider()
                 Button("Mover selección…") {
-                    explorerMenuActions?.moveSelection()
+                    NotificationCenter.default.post(name: .bb2sMoveSelection, object: nil)
                 }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
-                .disabled(explorerMenuActions?.hasSelection != true)
                 Button("Copiar selección…") {
-                    explorerMenuActions?.copySelection()
+                    NotificationCenter.default.post(name: .bb2sCopySelection, object: nil)
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
-                .disabled(explorerMenuActions?.hasSelection != true)
             }
             // Opens another instance of the main window, which macOS merges into a tab of the
             // existing one automatically when the system's tab preference allows it, same as

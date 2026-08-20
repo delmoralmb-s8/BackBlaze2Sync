@@ -9,25 +9,6 @@ enum TransferMode {
     case move, copy
 }
 
-/// Exposes "Mover/Copiar selección" to the app-menu Edit commands, which run at the App scene
-/// level and have no direct access to ExplorerView's own @State selection.
-struct ExplorerMenuActions {
-    let hasSelection: Bool
-    let moveSelection: () -> Void
-    let copySelection: () -> Void
-}
-
-private struct ExplorerMenuActionsKey: FocusedValueKey {
-    typealias Value = ExplorerMenuActions
-}
-
-extension FocusedValues {
-    var explorerMenuActions: ExplorerMenuActions? {
-        get { self[ExplorerMenuActionsKey.self] }
-        set { self[ExplorerMenuActionsKey.self] = newValue }
-    }
-}
-
 enum FolderPromptTarget {
     case explorer, picker
 }
@@ -393,11 +374,19 @@ struct ExplorerView: View {
         let withTransfers = applyTransferDialogs(to: withSheets)
         return withTransfers
             .background(keyboardShortcutButtons)
-            .focusedSceneValue(\.explorerMenuActions, ExplorerMenuActions(
-                hasSelection: !selectedPaths.isEmpty,
-                moveSelection: { openTransferSheet(.move) },
-                copySelection: { openTransferSheet(.copy) }
-            ))
+            // ponytail: a @FocusedValue-driven .disabled() on these same Commands crashed AppKit
+            // (NSMenu setItemArray: / NSTaggedPointerString hash) whenever the menu's enabled
+            // state changed while the user had the menu bar open, a real AppKit/SwiftUI bug, not
+            // fixable from here. NotificationCenter avoids touching the menu's enabled state at
+            // all: the item is always enabled, and this just no-ops quietly with no selection.
+            .onReceive(NotificationCenter.default.publisher(for: .bb2sMoveSelection)) { _ in
+                guard !selectedPaths.isEmpty else { return }
+                openTransferSheet(.move)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .bb2sCopySelection)) { _ in
+                guard !selectedPaths.isEmpty else { return }
+                openTransferSheet(.copy)
+            }
     }
 
     // Toolbar row + breadcrumb + path-input row icons/text, bumped 15% at Bernabe's request
