@@ -9,6 +9,25 @@ enum TransferMode {
     case move, copy
 }
 
+/// Exposes "Mover/Copiar selección" to the app-menu Edit commands, which run at the App scene
+/// level and have no direct access to ExplorerView's own @State selection.
+struct ExplorerMenuActions {
+    let hasSelection: Bool
+    let moveSelection: () -> Void
+    let copySelection: () -> Void
+}
+
+private struct ExplorerMenuActionsKey: FocusedValueKey {
+    typealias Value = ExplorerMenuActions
+}
+
+extension FocusedValues {
+    var explorerMenuActions: ExplorerMenuActions? {
+        get { self[ExplorerMenuActionsKey.self] }
+        set { self[ExplorerMenuActionsKey.self] = newValue }
+    }
+}
+
 enum FolderPromptTarget {
     case explorer, picker
 }
@@ -372,7 +391,13 @@ struct ExplorerView: View {
         let withCore = applyCoreDialogs(to: withLifecycle)
         let withSheets = applySheetsAndVerify(to: withCore)
         let withTransfers = applyTransferDialogs(to: withSheets)
-        return withTransfers.background(keyboardShortcutButtons)
+        return withTransfers
+            .background(keyboardShortcutButtons)
+            .focusedSceneValue(\.explorerMenuActions, ExplorerMenuActions(
+                hasSelection: !selectedPaths.isEmpty,
+                moveSelection: { openTransferSheet(.move) },
+                copySelection: { openTransferSheet(.copy) }
+            ))
     }
 
     // Toolbar row + breadcrumb + path-input row icons/text, bumped 15% at Bernabe's request
@@ -507,12 +532,12 @@ struct ExplorerView: View {
                 }
 
                 HStack {
+                    // Shortcuts for these two now live on the Edición-menu Commands (via
+                    // ExplorerMenuActions) instead of here, so the combo isn't registered twice.
                     Button("Mover selección…") { openTransferSheet(.move) }
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)
-                        .keyboardShortcut("m", modifiers: [.command, .shift])
                     Button("Copiar selección…") { openTransferSheet(.copy) }
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)
-                        .keyboardShortcut("c", modifiers: [.command, .shift])
                     Button("Borrar seleccionados (\(selectedPaths.count))") { showDeleteConfirm = true }
                         .keyboardShortcut(.delete, modifiers: .command)
                         .disabled(selectedPaths.isEmpty || rclone.isRunning)

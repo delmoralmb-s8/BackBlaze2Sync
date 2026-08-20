@@ -33,13 +33,14 @@ struct BackBlaze2SyncApp: App {
     @StateObject private var connectionStore = ConnectionStore()
     private let appearanceIconController = AppearanceIconController()
     @Environment(\.openWindow) private var openWindow
+    @FocusedValue(\.explorerMenuActions) private var explorerMenuActions
 
     // Same key ContentView's picker writes to — @AppStorage here re-runs `body` on change,
     // so every WindowGroup below re-applies `.environment(\.locale)` with the new value.
     @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(rclone)
                 .environmentObject(connectionStore)
@@ -58,9 +59,31 @@ struct BackBlaze2SyncApp: App {
                 Button("Historial de operaciones") {
                     openWindow(id: "history")
                 }
-                Button("Galería de fotos") {
-                    openWindow(id: "gallery", value: rclone.explorerPath)
+            }
+            // Reaches ExplorerView's own selection through ExplorerMenuActions (FocusedValue),
+            // the Commands closure runs at the App scene, which has no direct access to it.
+            CommandGroup(after: .pasteboard) {
+                Divider()
+                Button("Mover selección…") {
+                    explorerMenuActions?.moveSelection()
                 }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(explorerMenuActions?.hasSelection != true)
+                Button("Copiar selección…") {
+                    explorerMenuActions?.copySelection()
+                }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .disabled(explorerMenuActions?.hasSelection != true)
+            }
+            // Opens another instance of the main window, which macOS merges into a tab of the
+            // existing one automatically when the system's tab preference allows it, same as
+            // any other native window-per-WindowGroup SwiftUI app.
+            CommandGroup(after: .toolbar) {
+                Divider()
+                Button("Nueva pestaña") {
+                    openWindow(id: "main")
+                }
+                .keyboardShortcut("t", modifiers: .command)
             }
         }
         WindowGroup(id: "history") {
