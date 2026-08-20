@@ -19,7 +19,6 @@ struct ContentView: View {
 
     @State private var explorerExpanded = true
     @State private var showOptionsPopover = false
-    @State private var showParallelTransfersHelp = false
     @State private var logExpanded = false
     @State private var errorsExpanded = false
     @State private var pendingUploadsExpanded = false
@@ -113,6 +112,11 @@ struct ContentView: View {
         }
         .onChange(of: rclone.failedOperations.count) { _, newCount in
             if newCount > 0 { errorsExpanded = true }
+        }
+        // Menu bar's "Nueva conexión B2…" lives in the App scene's Commands, outside this view's
+        // state, a notification is the lightest way to reach showNewConnectionSheet from there.
+        .onReceive(NotificationCenter.default.publisher(for: .bb2sNewConnection)) { _ in
+            showNewConnectionSheet = true
         }
         .frame(minWidth: 560, minHeight: 500)
         .sheet(isPresented: $showNewConnectionSheet) {
@@ -351,7 +355,7 @@ struct ContentView: View {
                 }
                 .help("Opciones avanzadas")
                 .popover(isPresented: $showOptionsPopover) {
-                    optionsSection
+                    SettingsView()
                         .padding(16)
                         .frame(width: 320)
                         .environment(\.locale, Locale(identifier: appLanguageCode))
@@ -559,54 +563,6 @@ struct ContentView: View {
 
     // MARK: - Options
 
-    private var optionsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle("Verificar integridad después de subir (compara tamaño local vs remoto)", isOn: $rclone.verifyAfterUpload)
-            Toggle("Apagar Mac cuando termine", isOn: $rclone.shutdownWhenDone)
-                .help("Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar")
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Límite de velocidad")
-                HStack {
-                    Slider(value: $rclone.bandwidthLimitMBps, in: 0...200, step: 5)
-                    // ponytail: ternary-of-literals passed to Text(_:) resolves to the verbatim
-                    // String overload, not LocalizedStringKey — wrapping both branches is the fix.
-                    Text(rclone.bandwidthLimitMBps > 0 ? LocalizedStringKey("\(Int(rclone.bandwidthLimitMBps)) MB/s") : LocalizedStringKey("Sin límite"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 70, alignment: .trailing)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text("Transferencias en paralelo")
-                    // A hover-only tooltip wasn't discoverable, and hover itself feels unreliable
-                    // on a trackpad, so this is a real click target that pops the explanation up
-                    // on demand instead of waiting for a hover that may never register.
-                    Button {
-                        showParallelTransfersHelp = true
-                    } label: {
-                        Image(systemName: "questionmark.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .popover(isPresented: $showParallelTransfersHelp) {
-                        Text("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
-                            .font(.callout)
-                            .padding()
-                            .frame(width: 260)
-                    }
-                }
-                Stepper(value: $rclone.parallelTransfers, in: 1...16) {
-                    Text("\(rclone.parallelTransfers)")
-                }
-            }
-        }
-    }
-
     private var progressSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             ProgressView(value: rclone.percent, total: 100)
@@ -769,5 +725,60 @@ struct ContentView: View {
         panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let url = panel.url else { return }
         try? formattedLogText.write(to: url, atomically: true, encoding: .utf8)
+    }
+}
+
+/// The Options content, pulled out of ContentView so it can back both the quick popover (⚙️ in the
+/// connection bar) and the real macOS Preferences window (⌘,, wired via a Settings scene).
+struct SettingsView: View {
+    @EnvironmentObject var rclone: RcloneManager
+    @State private var showParallelTransfersHelp = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Verificar integridad después de subir (compara tamaño local vs remoto)", isOn: $rclone.verifyAfterUpload)
+            Toggle("Apagar Mac cuando termine", isOn: $rclone.shutdownWhenDone)
+                .help("Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar")
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Límite de velocidad")
+                HStack {
+                    Slider(value: $rclone.bandwidthLimitMBps, in: 0...200, step: 5)
+                    // ponytail: ternary-of-literals passed to Text(_:) resolves to the verbatim
+                    // String overload, not LocalizedStringKey — wrapping both branches is the fix.
+                    Text(rclone.bandwidthLimitMBps > 0 ? LocalizedStringKey("\(Int(rclone.bandwidthLimitMBps)) MB/s") : LocalizedStringKey("Sin límite"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 70, alignment: .trailing)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("Transferencias en paralelo")
+                    // A hover-only tooltip wasn't discoverable, and hover itself feels unreliable
+                    // on a trackpad, so this is a real click target that pops the explanation up
+                    // on demand instead of waiting for a hover that may never register.
+                    Button {
+                        showParallelTransfersHelp = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showParallelTransfersHelp) {
+                        Text("Súbelo con conexión rápida y muchos archivos chicos; bájalo en wifi débil o compartido. 4 es un buen default.")
+                            .font(.callout)
+                            .padding()
+                            .frame(width: 260)
+                    }
+                }
+                Stepper(value: $rclone.parallelTransfers, in: 1...16) {
+                    Text("\(rclone.parallelTransfers)")
+                }
+            }
+        }
     }
 }

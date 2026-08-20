@@ -1,6 +1,12 @@
 import SwiftUI
 import AppKit
 
+extension Notification.Name {
+    /// Posted by the menu bar's "Nueva conexión B2…" command so ContentView (which owns the sheet's
+    /// @State) can react without the App scene needing direct access to that state.
+    static let bb2sNewConnection = Notification.Name("mx.smh.backblaze2sync.newConnection")
+}
+
 // The AppIcon.appiconset shipped in the asset catalog only covers the light appearance — Xcode's
 // newer adaptive .icon catalog format (which would let the OS swap this natively) didn't produce
 // a usable app icon reference from Icon Composer's export on this Xcode version, so this swaps
@@ -26,6 +32,7 @@ struct BackBlaze2SyncApp: App {
     @StateObject private var rclone = RcloneManager()
     @StateObject private var connectionStore = ConnectionStore()
     private let appearanceIconController = AppearanceIconController()
+    @Environment(\.openWindow) private var openWindow
 
     // Same key ContentView's picker writes to — @AppStorage here re-runs `body` on change,
     // so every WindowGroup below re-applies `.environment(\.locale)` with the new value.
@@ -39,6 +46,23 @@ struct BackBlaze2SyncApp: App {
                 .environment(\.locale, Locale(identifier: appLanguageCode))
                 .onAppear { appearanceIconController.start() }
         }
+        .commands {
+            // Mirrors what already exists as toolbar buttons in ContentView/ExplorerView, just
+            // made reachable (and discoverable) from the menu bar too, next to "New Window".
+            CommandGroup(after: .newItem) {
+                Divider()
+                Button("Nueva conexión B2…") {
+                    NotificationCenter.default.post(name: .bb2sNewConnection, object: nil)
+                }
+                .keyboardShortcut("n", modifiers: .command)
+                Button("Historial de operaciones") {
+                    openWindow(id: "history")
+                }
+                Button("Galería de fotos") {
+                    openWindow(id: "gallery", value: rclone.explorerPath)
+                }
+            }
+        }
         WindowGroup(id: "history") {
             HistoryView()
                 .environmentObject(rclone)
@@ -49,6 +73,15 @@ struct BackBlaze2SyncApp: App {
                 .environmentObject(rclone)
                 .environmentObject(connectionStore)
                 .environment(\.locale, Locale(identifier: appLanguageCode))
+        }
+        // Wires the standard "Preferencias… ⌘," app-menu item to the same options already
+        // reachable from the ⚙️ popover in ContentView, no custom Commands needed for this one.
+        Settings {
+            SettingsView()
+                .environmentObject(rclone)
+                .environment(\.locale, Locale(identifier: appLanguageCode))
+                .padding(20)
+                .frame(width: 380)
         }
     }
 }
