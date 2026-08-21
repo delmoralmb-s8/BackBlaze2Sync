@@ -12,6 +12,7 @@
 		5DDB766BF8B33EDC895A4554 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4BA67939EB5001FCCF1866 /* Connection.swift */; };
 		7D93EAB3B20AC6CA2E2DDD1A /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37591B792E1023160ECD0583 /* GalleryView.swift */; };
 		841EF970FF5B046698C939C8 /* BackBlaze2SyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D46F69D21B75F59B82D1CCEA /* BackBlaze2SyncApp.swift */; };
+		84F18FD6EFB21EAEA416E3C2 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD05DA9B18F1701123797BA /* StatsView.swift */; };
 		8A31B6536833D42F1DCD8697 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2FBE39808F45F55C9AA3594 /* Localizable.xcstrings */; };
 		9325B157462DF2F54C44F7DB /* ImageKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = F486B544A19B51BA86EC1C9F /* ImageKind.swift */; };
 		A61526D6D9D8569A7E9B37E4 /* B2CredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C5582716A0882F7725FB81 /* B2CredentialsStore.swift */; };
@@ -35,6 +36,7 @@
 		9C074CA2EBAA43A686F4A693 /* BackBlaze2Sync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BackBlaze2Sync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2FBE39808F45F55C9AA3594 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		CA9650DABC5107B0753F3104 /* ExplorerNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplorerNode.swift; sourceTree = "<group>"; };
+		CDD05DA9B18F1701123797BA /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		D188E3DF590166BBBCE2BAB7 /* RcloneManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RcloneManager.swift; sourceTree = "<group>"; };
 		D46F69D21B75F59B82D1CCEA /* BackBlaze2SyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackBlaze2SyncApp.swift; sourceTree = "<group>"; };
 		D4C5582716A0882F7725FB81 /* B2CredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = B2CredentialsStore.swift; sourceTree = "<group>"; };
@@ -81,6 +83,7 @@
 				A2FBE39808F45F55C9AA3594 /* Localizable.xcstrings */,
 				5A385CE8B6E5E5B692986F12 /* QuickLookController.swift */,
 				D188E3DF590166BBBCE2BAB7 /* RcloneManager.swift */,
+				CDD05DA9B18F1701123797BA /* StatsView.swift */,
 				383112DF2680E4F4B4621B96 /* ThumbnailStore.swift */,
 			);
 			path = Sources;
@@ -185,6 +188,7 @@
 				9325B157462DF2F54C44F7DB /* ImageKind.swift in Sources */,
 				47DA9C5835DFC4989C9E1D84 /* QuickLookController.swift in Sources */,
 				D5660065EC00382BF5B9DB13 /* RcloneManager.swift in Sources */,
+				84F18FD6EFB21EAEA416E3C2 /* StatsView.swift in Sources */,
 				AD523346F2344D639B93AAF8 /* ThumbnailStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

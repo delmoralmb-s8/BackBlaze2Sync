@@ -1,6 +1,158 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "Estadísticas": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Stats" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Estadísticas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Statistiques" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Estatísticas" } }
+      }
+    },
+    "Tu bucket ahora mismo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your bucket right now" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Tu bucket ahora mismo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Votre bucket en ce moment" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Seu bucket agora" } }
+      }
+    },
+    "Conéctate a un bucket para ver sus estadísticas.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Connect to a bucket to see its stats." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Conéctate a un bucket para ver sus estadísticas." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Connectez-vous à un bucket pour voir ses statistiques." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Conecte-se a um bucket para ver suas estatísticas." } }
+      }
+    },
+    "No se pudo escanear el bucket. Intenta \"Actualizar\".": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Couldn't scan the bucket. Try \"Update\"." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo escanear el bucket. Intenta \"Actualizar\"." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Impossible d'analyser le bucket. Essayez \"Actualiser\"." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Não foi possível escanear o bucket. Tente \"Atualizar\"." } }
+      }
+    },
+    "Archivo más antiguo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Oldest file" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Archivo más antiguo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Fichier le plus ancien" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Arquivo mais antigo" } }
+      }
+    },
+    "Archivo más pesado": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Largest file" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Archivo más pesado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Fichier le plus volumineux" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Arquivo maior" } }
+      }
+    },
+    "Carpeta más pesada": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Largest folder" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Carpeta más pesada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Dossier le plus volumineux" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Pasta maior" } }
+      }
+    },
+    "Costo estimado en B2": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Estimated B2 cost" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Costo estimado en B2" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Coût B2 estimé" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Custo estimado no B2" } }
+      }
+    },
+    "Por tipo de archivo": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "By file type" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Por tipo de archivo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Par type de fichier" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Por tipo de arquivo" } }
+      }
+    },
+    "Fotos e imágenes": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Photos & images" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Fotos e imágenes" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Photos et images" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Fotos e imagens" } }
+      }
+    },
+    "Documentos": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Documents" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Documentos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Documents" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Documentos" } }
+      }
+    },
+    "Instaladores": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Installers" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Instaladores" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Installateurs" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Instaladores" } }
+      }
+    },
+    "Otros": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Other" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Otros" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Autres" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Outros" } }
+      }
+    },
+    "Escaneando el bucket completo… puede tardar en buckets grandes.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Scanning the whole bucket… this can take a while for large buckets." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Escaneando el bucket completo… puede tardar en buckets grandes." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Analyse complète du bucket… cela peut prendre du temps pour les gros buckets." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Escaneando o bucket inteiro… pode demorar em buckets grandes." } }
+      }
+    },
+    "Tu actividad en BackBlaze2Sync": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your activity in BackBlaze2Sync" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Tu actividad en BackBlaze2Sync" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Votre activité dans BackBlaze2Sync" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Sua atividade no BackBlaze2Sync" } }
+      }
+    },
+    "Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Only counts what you did with this app (up to the last 2000 operations), not everything in the bucket." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ne compte que ce qui a été fait avec cette app (jusqu'aux 2000 dernières opérations), pas tout ce qu'il y a dans le bucket." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Conta apenas o que foi feito com este app (até as últimas 2000 operações), não tudo que há no bucket." } }
+      }
+    },
+    "Promedio subido por día": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Average uploaded per day" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Promedio subido por día" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Moyenne envoyée par jour" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Média enviada por dia" } }
+      }
+    },
+    "Hora en la que más subes": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hour you upload most" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Hora en la que más subes" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Heure où vous envoyez le plus" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Hora em que mais você envia" } }
+      }
+    },
+    "Total descargado": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Total downloaded" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Total descargado" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Total téléchargé" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Total baixado" } }
+      }
+    },
     "\"%@\" se va a borrar de B2. Esto no se puede deshacer.": {
       "localizations": {
         "en": {

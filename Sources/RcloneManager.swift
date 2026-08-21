@@ -54,6 +54,27 @@ struct FolderSizeInfo {
     let bytes: Int64
 }
 
+/// A snapshot from one full recursive scan of the bucket, for the Estadísticas window. Everything
+/// here reflects the bucket's real current content, regardless of which tool put it there, unlike
+/// `LocalActivityStats`, which only knows about what this app itself did.
+struct BucketStats {
+    let totalBytes: Int64
+    let oldestFileDate: Date?
+    let largestFile: (name: String, bytes: Int64)?
+    let largestTopFolder: (name: String, bytes: Int64)?
+    /// Sorted largest-first, ready to display as-is.
+    let categoryBytes: [(category: String, bytes: Int64)]
+    let scannedAt: Date
+}
+
+/// Aggregated from `RcloneManager.history` (only operations done through this app, capped at
+/// `maxHistoryEntries`). The counterpart to `BucketStats`, which scans the real bucket instead.
+struct LocalActivityStats {
+    let averageMBPerDayUploaded: Double?
+    let peakUploadHour: Int?
+    let totalDownloadedMB: Double
+}
+
 enum RemoteListTarget {
     case main, picker
 }
@@ -432,6 +453,7 @@ final class RcloneManager: ObservableObject {
         // The search index is a snapshot of the WHOLE connection, so any mutation anywhere in it
         // makes the snapshot stale — there's no per-path slice of it to expire selectively.
         searchIndex = nil
+        bucketStatsCache = nil
     }
 
     /// Manual "Actualizar" — bypasses the 60s cache so a change made outside the app (or missed by
@@ -686,6 +708,145 @@ final class RcloneManager: ObservableObject {
     func cancelSearch() {
         searchTask?.terminate()
         searchTask = nil
+    }
+
+    // MARK: - Bucket statistics (Estadísticas window)
+
+    private var bucketStatsCache: (basePath: String, stats: BucketStats)?
+    private static let bucketStatsTTL: TimeInterval = 300
+
+    /// Full recursive scan of the bucket, same shape/anti-deadlock pattern as `searchAll`, but
+    /// keeping `ModTime` (search drops it since it never needs it) since the oldest-file date
+    /// depends on it. `forceRefresh` is what the window's "Actualizar" button uses to bypass the
+    /// cache; everything else (first open, TTL expiry) goes through the normal cached path.
+    func scanBucketStats(basePath: String, forceRefresh: Bool = false, completion: @escaping (BucketStats?) -> Void) {
+        if !forceRefresh, let cache = bucketStatsCache, cache.basePath == basePath,
+           Date().timeIntervalSince(cache.stats.scannedAt) < Self.bucketStatsTTL {
+            completion(cache.stats)
+            return
+        }
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
+        task.arguments = Self.networkTimeoutArgs
+            + ["lsjson", "--recursive", "--fast-list", "--no-mimetype", basePath]
+        let outPipe = Pipe()
+        let errPipe = Pipe()
+        task.standardOutput = outPipe
+        task.standardError = errPipe
+        do {
+            try task.run()
+        } catch {
+            log("[ERROR] No se pudieron calcular las estadísticas: \(error.localizedDescription)")
+            completion(nil)
+            return
+        }
+        DispatchQueue.global(qos: .utility).async {
+            let data = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+            task.waitUntilExit()
+            let decoded = task.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
+            let stats = decoded.map { Self.computeBucketStats(from: $0) }
+            Task { @MainActor in
+                if let stats {
+                    self.bucketStatsCache = (basePath: basePath, stats: stats)
+                    completion(stats)
+                } else {
+                    let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
+                    self.log("[ERROR] No se pudieron calcular las estadísticas del bucket\(suffix)")
+                    completion(nil)
+                }
+            }
+        }
+    }
+
+    private static let statsModTimeParsers: [ISO8601DateFormatter] = {
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return [withFraction, plain]
+    }()
+
+    private static func parseModTime(_ modTime: String?) -> Date? {
+        guard let modTime else { return nil }
+        return statsModTimeParsers.lazy.compactMap { $0.date(from: modTime) }.first
+    }
+
+    private static let documentExtensions: Set<String> = [
+        "doc", "docx", "txt", "rtf", "pages", "odt", "xls", "xlsx", "csv", "ppt", "pptx", "key", "numbers",
+    ]
+    private static let installerExtensions: Set<String> = ["dmg", "pkg", "exe", "msi", "app"]
+
+    private static func fileCategory(for name: String) -> String {
+        if ImageKind.isImage(name) { return "Fotos e imágenes" }
+        let ext = (name as NSString).pathExtension.lowercased()
+        if ext == "pdf" { return "PDF" }
+        if documentExtensions.contains(ext) { return "Documentos" }
+        if installerExtensions.contains(ext) { return "Instaladores" }
+        return "Otros"
+    }
+
+    private static func computeBucketStats(from entries: [RemoteEntry]) -> BucketStats {
+        var totalBytes: Int64 = 0
+        var oldestDate: Date?
+        var largestFile: (name: String, bytes: Int64)?
+        var folderBytes: [String: Int64] = [:]
+        var categoryBytes: [String: Int64] = [:]
+
+        for entry in entries where !entry.IsDir && entry.Name != ".bzEmpty" {
+            totalBytes += entry.Size
+            if let date = parseModTime(entry.ModTime), oldestDate == nil || date < oldestDate! {
+                oldestDate = date
+            }
+            if largestFile == nil || entry.Size > largestFile!.bytes {
+                largestFile = (name: entry.Name, bytes: entry.Size)
+            }
+            // Only a real top-level FOLDER, not a root file whose own name would otherwise look
+            // like a one-item "folder" here.
+            let segments = entry.Path.split(separator: "/")
+            if segments.count > 1, let topFolder = segments.first {
+                folderBytes[String(topFolder), default: 0] += entry.Size
+            }
+            categoryBytes[fileCategory(for: entry.Name), default: 0] += entry.Size
+        }
+
+        return BucketStats(
+            totalBytes: totalBytes,
+            oldestFileDate: oldestDate,
+            largestFile: largestFile,
+            largestTopFolder: folderBytes.max(by: { $0.value < $1.value }).map { (name: $0.key, bytes: $0.value) },
+            categoryBytes: categoryBytes.sorted { $0.value > $1.value }.map { (category: $0.key, bytes: $0.value) },
+            scannedAt: Date()
+        )
+    }
+
+    /// Pure aggregation over `history`, cheap enough (capped at `maxHistoryEntries`) to recompute
+    /// on demand rather than cache.
+    func localActivityStats() -> LocalActivityStats {
+        let uploads = history.filter { $0.type == "Subida" }
+        let downloads = history.filter { $0.type == "Descarga" }
+        let totalDownloadedMB = downloads.reduce(0.0) { $0 + $1.megabytes }
+
+        var averagePerDay: Double?
+        if let oldestUpload = uploads.map(\.date).min() {
+            let days = max(1.0, Date().timeIntervalSince(oldestUpload) / 86400)
+            let totalUploadedMB = uploads.reduce(0.0) { $0 + $1.megabytes }
+            averagePerDay = totalUploadedMB / days
+        }
+
+        var peakHour: Int?
+        if !uploads.isEmpty {
+            let calendar = Calendar.current
+            var counts: [Int: Int] = [:]
+            for upload in uploads {
+                counts[calendar.component(.hour, from: upload.date), default: 0] += 1
+            }
+            peakHour = counts.max(by: { $0.value < $1.value })?.key
+        }
+
+        return LocalActivityStats(averageMBPerDayUploaded: averagePerDay, peakUploadHour: peakHour, totalDownloadedMB: totalDownloadedMB)
     }
 
     private static func foldedForSearch(_ text: String) -> String {

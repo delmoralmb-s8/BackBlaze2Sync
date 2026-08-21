@@ -369,6 +369,14 @@ struct ContentView: View {
                 }
                 .help("Historial de operaciones")
 
+                Button {
+                    openWindow(id: "stats")
+                } label: {
+                    Label("Estadísticas", systemImage: "chart.bar.fill")
+                        .labelStyle(.iconOnly)
+                }
+                .help("Estadísticas")
+
                 // ponytail: .help() never shows up on Picker(.menu) rows on macOS — SwiftUI turns
                 // them into plain NSMenuItems, which don't wire up tooltips. A Menu of Buttons
                 // lets each row show its own full language name directly instead, no hover needed.

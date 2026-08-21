@@ -77,6 +77,9 @@ struct BackBlaze2SyncApp: App {
                 Button("Historial de operaciones") {
                     openWindow(id: "history")
                 }
+                Button("Estadísticas") {
+                    openWindow(id: "stats")
+                }
             }
             // Reaches ExplorerView's own selection via NotificationCenter, the Commands closure
             // runs at the App scene, which has no direct access to that @State. Always enabled
@@ -131,6 +134,12 @@ struct BackBlaze2SyncApp: App {
         }
         WindowGroup(id: "gallery", for: String.self) { $initialPath in
             GalleryView(initialPath: initialPath ?? "")
+                .environmentObject(rclone)
+                .environmentObject(connectionStore)
+                .environment(\.locale, Locale(identifier: appLanguageCode))
+        }
+        WindowGroup(id: "stats") {
+            StatsView()
                 .environmentObject(rclone)
                 .environmentObject(connectionStore)
                 .environment(\.locale, Locale(identifier: appLanguageCode))
