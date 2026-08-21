@@ -1,6 +1,10 @@
 name: BackBlaze2Sync
 options:
   bundleIdPrefix: mx.smh.backblaze2sync
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.6.0
 targets:
   BackBlaze2Sync:
     type: application
@@ -8,6 +12,8 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - Sources
+    dependencies:
+      - package: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.smh.backblaze2sync.app
@@ -16,9 +22,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         ENABLE_APP_SANDBOX: NO
         CODE_SIGN_STYLE: Automatic
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSHumanReadableCopyright: ""
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_FILE: Info.plist
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         SWIFT_VERSION: "5.0"
       configs:

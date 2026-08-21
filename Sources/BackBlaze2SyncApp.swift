@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import Sparkle
 
 extension Notification.Name {
     /// Posted by the menu bar's "Nueva conexión B2…" command so ContentView (which owns the sheet's
@@ -37,6 +38,9 @@ struct BackBlaze2SyncApp: App {
     @StateObject private var rclone = RcloneManager()
     @StateObject private var connectionStore = ConnectionStore()
     private let appearanceIconController = AppearanceIconController()
+    private let updaterController = SPUStandardUpdaterController(
+        startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
+    )
     @Environment(\.openWindow) private var openWindow
 
     // Same key ContentView's picker writes to — @AppStorage here re-runs `body` on change,
@@ -57,6 +61,9 @@ struct BackBlaze2SyncApp: App {
             CommandGroup(replacing: .appInfo) {
                 Button("Acerca de BackBlaze2Sync") {
                     showAboutPanel()
+                }
+                Button("Buscar actualizaciones…") {
+                    updaterController.checkForUpdates(nil)
                 }
             }
             // Mirrors what already exists as toolbar buttons in ContentView/ExplorerView, just
@@ -104,6 +111,17 @@ struct BackBlaze2SyncApp: App {
                     }
                 }
                 .keyboardShortcut("t", modifiers: .command)
+            }
+            // Both just hand off to the system (browser / default Mail app), no in-app form to
+            // build or maintain for a personal side project.
+            CommandGroup(after: .help) {
+                Divider()
+                Button("Reportar un problema…") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/delmoralmb-s8/BackBlaze2Sync/issues/new")!)
+                }
+                Button("Enviar comentarios por correo…") {
+                    NSWorkspace.shared.open(URL(string: "mailto:delmoral.mb@gmail.com?subject=BackBlaze2Sync%20feedback")!)
+                }
             }
         }
         WindowGroup(id: "history") {
