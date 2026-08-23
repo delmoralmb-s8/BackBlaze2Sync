@@ -7,11 +7,22 @@ struct StatsView: View {
     @State private var bucketStats: BucketStats?
     @State private var isScanning = false
     @State private var scanFailed = false
+    // Bumped each time a scan starts or gets cancelled, so a completion handler from a scan the
+    // user already cancelled (it still fires, just with nil) can tell it's stale and stay quiet
+    // instead of showing a false "scan failed" error.
+    @State private var scanGeneration = 0
 
     // $6.95/TB/month, confirmed against backblaze.com/cloud-storage/pricing. B2's own first-10GB
     // free tier is subtracted below, everything else is one multiplication, no billing API needed.
     private static let pricePerTBPerMonth = 6.95
     private static let freeGB = 10.0
+
+    // Same "bump 15%" convention ExplorerView already established for its toolbar (13pt body /
+    // 11pt caption system defaults × 1.15), applied here to this window's own text.
+    private static let headlineSize: CGFloat = 13 * 1.15
+    private static let calloutSize: CGFloat = 12 * 1.15
+    private static let subheadlineSize: CGFloat = 11 * 1.15
+    private static let captionSize: CGFloat = 10 * 1.15
 
     private var basePath: String? {
         connectionStore.active.map { $0.remotePrefix }
@@ -34,13 +45,14 @@ struct StatsView: View {
 
     private var header: some View {
         HStack {
-            Text("Estadísticas").font(.headline)
+            Text("Estadísticas").font(.system(size: Self.headlineSize, weight: .semibold))
             Spacer()
             if isScanning {
                 ProgressView().controlSize(.small)
+                Button("Cancelar") { cancelScan() }
             } else if let stats = bucketStats {
                 Text("Actualizado \(stats.scannedAt.formatted(.relative(presentation: .named)))")
-                    .font(.caption)
+                    .font(.system(size: Self.captionSize))
                     .foregroundStyle(.secondary)
             }
             Button("Actualizar") { refresh(force: true) }
@@ -52,13 +64,15 @@ struct StatsView: View {
 
     private var bucketSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tu bucket ahora mismo").font(.headline)
+            Text("Tu bucket ahora mismo").font(.system(size: Self.headlineSize, weight: .semibold))
 
             if basePath == nil {
                 Text("Conéctate a un bucket para ver sus estadísticas.")
+                    .font(.system(size: Self.calloutSize))
                     .foregroundStyle(.secondary)
             } else if scanFailed {
                 Text("No se pudo escanear el bucket. Intenta \"Actualizar\".")
+                    .font(.system(size: Self.calloutSize))
                     .foregroundStyle(.secondary)
             } else if let stats = bucketStats {
                 statCard(icon: "externaldrive.fill", title: "Tamaño total", value: formattedSize(stats.totalBytes))
@@ -72,19 +86,21 @@ struct StatsView: View {
                 statCard(icon: "dollarsign.circle.fill", title: "Costo estimado en B2", value: estimatedCost(totalBytes: stats.totalBytes))
 
                 if !stats.categoryBytes.isEmpty {
-                    Text("Por tipo de archivo").font(.subheadline).padding(.top, 4)
+                    Text("Por tipo de archivo")
+                        .font(.system(size: Self.subheadlineSize))
+                        .padding(.top, 4)
                     ForEach(stats.categoryBytes, id: \.category) { entry in
                         HStack {
                             Text(LocalizedStringKey(entry.category))
                             Spacer()
                             Text(formattedSize(entry.bytes)).foregroundStyle(.secondary)
                         }
-                        .font(.callout)
+                        .font(.system(size: Self.calloutSize))
                     }
                 }
             } else if isScanning {
                 Text("Escaneando el bucket completo… puede tardar en buckets grandes.")
-                    .font(.callout)
+                    .font(.system(size: Self.calloutSize))
                     .foregroundStyle(.secondary)
             }
         }
@@ -94,9 +110,9 @@ struct StatsView: View {
 
     private var activitySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Tu actividad en BackBlaze2Sync").font(.headline)
+            Text("Tu actividad en BackBlaze2Sync").font(.system(size: Self.headlineSize, weight: .semibold))
             Text("Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket.")
-                .font(.caption)
+                .font(.system(size: Self.captionSize))
                 .foregroundStyle(.secondary)
 
             let activity = rclone.localActivityStats()
@@ -118,14 +134,17 @@ struct StatsView: View {
             Spacer()
             Text(value).foregroundStyle(.secondary)
         }
-        .font(.callout)
+        .font(.system(size: Self.calloutSize))
     }
 
     private func refresh(force: Bool) {
         guard let basePath else { return }
         isScanning = true
         scanFailed = false
+        scanGeneration += 1
+        let generation = scanGeneration
         rclone.scanBucketStats(basePath: basePath, forceRefresh: force) { stats in
+            guard generation == scanGeneration else { return }
             isScanning = false
             if let stats {
                 bucketStats = stats
@@ -133,6 +152,12 @@ struct StatsView: View {
                 scanFailed = true
             }
         }
+    }
+
+    private func cancelScan() {
+        rclone.cancelBucketStatsScan()
+        scanGeneration += 1
+        isScanning = false
     }
 
     private func formattedSize(_ bytes: Int64) -> String {

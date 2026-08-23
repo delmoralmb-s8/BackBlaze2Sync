@@ -714,6 +714,7 @@ final class RcloneManager: ObservableObject {
 
     private var bucketStatsCache: (basePath: String, stats: BucketStats)?
     private static let bucketStatsTTL: TimeInterval = 300
+    private var bucketStatsTask: Process?
 
     /// Full recursive scan of the bucket, same shape/anti-deadlock pattern as `searchAll`, but
     /// keeping `ModTime` (search drops it since it never needs it) since the oldest-file date
@@ -741,6 +742,7 @@ final class RcloneManager: ObservableObject {
             completion(nil)
             return
         }
+        bucketStatsTask = task
         DispatchQueue.global(qos: .utility).async {
             let data = outPipe.fileHandleForReading.readDataToEndOfFile()
             let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
@@ -748,17 +750,29 @@ final class RcloneManager: ObservableObject {
             let decoded = task.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
             let stats = decoded.map { Self.computeBucketStats(from: $0) }
             Task { @MainActor in
+                self.bucketStatsTask = nil
                 if let stats {
                     self.bucketStatsCache = (basePath: basePath, stats: stats)
                     completion(stats)
                 } else {
-                    let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
-                    self.log("[ERROR] No se pudieron calcular las estadísticas del bucket\(suffix)")
+                    // A cancelled scan also exits non-zero, only log when it actually failed.
+                    if task.terminationReason != .uncaughtSignal {
+                        let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
+                        self.log("[ERROR] No se pudieron calcular las estadísticas del bucket\(suffix)")
+                    }
                     completion(nil)
                 }
             }
         }
+    }
+
+    /// Stops an in-flight `scanBucketStats`. Its completion handler still fires (with `nil`,
+    /// since a killed process exits non-zero), the caller just needs to ignore that as "cancelled"
+    /// rather than a real failure if the user asked for the cancel.
+    func cancelBucketStatsScan() {
+        bucketStatsTask?.terminate()
+        bucketStatsTask = nil
     }
 
     private static let statsModTimeParsers: [ISO8601DateFormatter] = {
