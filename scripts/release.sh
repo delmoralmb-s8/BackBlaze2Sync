@@ -55,33 +55,41 @@ DMG_PATH="dist/BackBlaze2Sync-$VERSION.dmg"
 rm -f "$DMG_PATH"
 hdiutil create -volname "BackBlaze2Sync" -srcfolder "$STAGE" -ov -format UDZO "$DMG_PATH"
 
+# generate_appcast rejects a folder containing more than one archive for the same bundle
+# version (real error hit on the very first real release: leftover 1.0 dmgs sitting in dist/
+# from a previous run tripped "Duplicate updates are not supported"). Anything not matching
+# THIS version gets moved out of the way instead of deleted.
+echo "==> Archiving older .dmg files out of dist/"
+mkdir -p dist/archive
+find dist -maxdepth 1 -name "BackBlaze2Sync-*.dmg" ! -name "BackBlaze2Sync-$VERSION.dmg" -exec mv {} dist/archive/ \;
+
 echo "==> Generating appcast.xml with release notes"
-"$GENERATE_APPCAST" dist/
+# --download-url-prefix is required: without it generate_appcast guesses a URL from the
+# existing appcast's own <link> (wrong, that's the feed's URL, not where the .dmg lives).
+"$GENERATE_APPCAST" --download-url-prefix "https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v$VERSION/" dist/
 cp dist/appcast.xml ./appcast.xml
 
 # generate_appcast doesn't know about our release notes text, so this fills in the
-# <description> of the item it just created for this version (matched by sparkle:version).
-python3 - "$VERSION" "$BUILD" "$NOTES_FILE" <<'PYEOF'
-import sys, re
-version, build, notes_file = sys.argv[1], sys.argv[2], sys.argv[3]
+# <description> right after <sparkle:minimumSystemVersion>, which generate_appcast always
+# emits. sparkle:version is an ELEMENT here (<sparkle:version>2</sparkle:version>), not an
+# attribute, a first attempt at this regex assumed the latter and silently matched nothing.
+python3 - "$NOTES_FILE" <<'PYEOF'
+import sys
+notes_file = sys.argv[1]
 with open(notes_file, encoding="utf-8") as f:
     notes = f.read().strip()
 with open("appcast.xml", encoding="utf-8") as f:
     xml = f.read()
-
-pattern = re.compile(
-    r'(<item>(?:(?!</item>).)*?sparkle:version="' + re.escape(build) +
-    r'"(?:(?!</item>).)*?)(</item>)',
-    re.DOTALL,
-)
-description = f'\n            <description><![CDATA[{notes}]]></description>'
-new_xml, count = pattern.subn(lambda m: m.group(1) + description + m.group(2), xml, count=1)
-if count == 0:
-    print(f"WARNING: could not find the appcast item for build {build} to insert release notes.", file=sys.stderr)
+marker = "</sparkle:minimumSystemVersion>"
+description = f'{marker}\n            <description><![CDATA[{notes}]]></description>'
+if marker not in xml:
+    print("WARNING: could not find the appcast item to insert release notes.", file=sys.stderr)
 else:
+    xml = xml.replace(marker, description, 1)
     with open("appcast.xml", "w", encoding="utf-8") as f:
-        f.write(new_xml)
+        f.write(xml)
 PYEOF
+cp appcast.xml dist/appcast.xml
 
 echo "==> Publishing"
 git add project.yml appcast.xml
