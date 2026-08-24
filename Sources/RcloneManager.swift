@@ -792,6 +792,13 @@ final class RcloneManager: ObservableObject {
         "doc", "docx", "txt", "rtf", "pages", "odt", "xls", "xlsx", "csv", "ppt", "pptx", "key", "numbers",
     ]
     private static let installerExtensions: Set<String> = ["dmg", "pkg", "exe", "msi", "app"]
+    private static let videoExtensions: Set<String> = [
+        "mp4", "mov", "mkv", "avi", "wmv", "flv", "webm", "m4v", "mpg", "mpeg", "3gp",
+    ]
+    private static let audioExtensions: Set<String> = [
+        "mp3", "wav", "aac", "flac", "m4a", "ogg", "wma", "aiff", "alac",
+    ]
+    private static let archiveExtensions: Set<String> = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz"]
 
     private static func fileCategory(for name: String) -> String {
         if ImageKind.isImage(name) { return "Fotos e imágenes" }
@@ -799,6 +806,9 @@ final class RcloneManager: ObservableObject {
         if ext == "pdf" { return "PDF" }
         if documentExtensions.contains(ext) { return "Documentos" }
         if installerExtensions.contains(ext) { return "Instaladores" }
+        if videoExtensions.contains(ext) { return "Video" }
+        if audioExtensions.contains(ext) { return "Audio" }
+        if archiveExtensions.contains(ext) { return "Comprimidos" }
         return "Otros"
     }
 
@@ -861,6 +871,29 @@ final class RcloneManager: ObservableObject {
         }
 
         return LocalActivityStats(averageMBPerDayUploaded: averagePerDay, peakUploadHour: peakHour, totalDownloadedMB: totalDownloadedMB)
+    }
+
+    /// One bar of the activity chart in Estadísticas: MB subidos ese día calendario.
+    struct DailyUpload: Identifiable {
+        let day: Date
+        var megabytes: Double
+        var id: Date { day }
+    }
+
+    /// Últimos `days` días (incluyendo hoy), en orden cronológico, con 0 en los días sin subidas —
+    /// así la gráfica de barras no salta huecos silenciosamente.
+    func dailyUploadMB(days: Int = 14) -> [DailyUpload] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        var totals: [Date: Double] = [:]
+        for record in history where record.type == "Subida" {
+            let day = calendar.startOfDay(for: record.date)
+            totals[day, default: 0] += record.megabytes
+        }
+        return (0..<days).reversed().map { offset in
+            let day = calendar.date(byAdding: .day, value: -offset, to: today) ?? today
+            return DailyUpload(day: day, megabytes: totals[day] ?? 0)
+        }
     }
 
     private static func foldedForSearch(_ text: String) -> String {
