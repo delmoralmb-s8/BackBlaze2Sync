@@ -1,5 +1,15 @@
 import SwiftUI
 import Charts
+import AppKit
+
+/// Sube el brillo (HSB) de un color sin tocar su tono/saturación, para que la paleta de
+/// Estadísticas se vea más viva sin dejar de ser "el mismo color" que pidió Bernabe.
+private func brightened(_ color: Color, by amount: CGFloat = 0.22) -> Color {
+    guard let rgb = NSColor(color).usingColorSpace(.deviceRGB) else { return color }
+    var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+    rgb.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+    return Color(hue: hue, saturation: saturation, brightness: min(1, brightness + amount), opacity: alpha)
+}
 
 /// Paleta pedida por Bernabe para las gráficas de Estadísticas. Con más de 8 categorías en un
 /// bucket real (Fotos/PDF/Documentos/Instaladores/Video/Audio/Comprimidos/Otros) los 5 colores
@@ -14,7 +24,7 @@ private let statsChartPalette: [Color] = [
     Color(red: 0x4A / 255, green: 0x2E / 255, blue: 0x1B / 255),  // Dark Wood Brown
     Color(red: 0xB4 / 255, green: 0x59 / 255, blue: 0x59 / 255),  // Deep Red aclarado
     Color(red: 0x90 / 255, green: 0x59 / 255, blue: 0x23 / 255),  // Bronce oscurecido
-]
+].map { brightened($0) }
 
 struct StatsView: View {
     @EnvironmentObject var rclone: RcloneManager
@@ -22,6 +32,7 @@ struct StatsView: View {
 
     @State private var bucketStats: BucketStats?
     @State private var hoveredDay: RcloneManager.DailyUpload?
+    @State private var hoveredCategory: String?
     @State private var isScanning = false
     @State private var scanFailed = false
     // Bumped each time a scan starts or gets cancelled, so a completion handler from a scan the
@@ -160,18 +171,88 @@ struct StatsView: View {
         return map
     }
 
+    /// Sin esto, una categoría que sea <1% del total (común: Audio/PDF/Documentos sueltos junto a
+    /// Video/Fotos gigantes) dibuja una rebanada de ancho ~0 — el color está bien asignado, solo
+    /// invisible. Se le da a cada rebanada un piso del 3% del círculo (quitado proporcionalmente
+    /// de las demás) para que las 8 categorías siempre se puedan ver y distinguir; el tamaño real
+    /// sigue mostrándose tal cual en la leyenda, esto solo afecta el dibujo del ángulo.
+    private static let minSlicePortion = 0.03
+
+    private func donutAngles(for categories: [(category: String, bytes: Int64)]) -> [Int64] {
+        let total = categories.reduce(0.0) { $0 + Double($1.bytes) }
+        guard total > 0 else { return categories.map { _ in 0 } }
+        let floor = total * Self.minSlicePortion
+        let boosted = categories.map { max(Double($0.bytes), floor) }
+        let boostedTotal = boosted.reduce(0, +)
+        // Reescala para que la suma de ángulos siga sumando el total original (el "peso extra"
+        // dado a las rebanadas chicas se resta proporcionalmente de las grandes).
+        return boosted.map { Int64(($0 / boostedTotal) * total) }
+    }
+
+    /// Rango angular (en grados, 0 = arriba, sentido horario) de cada categoría dentro de la
+    /// dona, en el mismo orden en que `Chart` dibuja los `SectorMark` — necesario para poder
+    /// traducir "dónde está el mouse" a "qué categoría es" en el hover.
+    private func donutAngleRanges(for categories: [(category: String, bytes: Int64)], angles: [Int64]) -> [(category: String, start: Double, end: Double)] {
+        let totalAngle = Double(angles.reduce(0, +))
+        guard totalAngle > 0 else { return [] }
+        var ranges: [(category: String, start: Double, end: Double)] = []
+        var cursor = 0.0
+        for (index, angle) in angles.enumerated() {
+            let sweep = Double(angle) / totalAngle * 360
+            ranges.append((categories[index].category, cursor, cursor + sweep))
+            cursor += sweep
+        }
+        return ranges
+    }
+
     private func categoryDonut(_ categories: [(category: String, bytes: Int64)], totalBytes: Int64) -> some View {
         let colors = categoryColorMap(categories)
+        let angles = donutAngles(for: categories)
+        let ranges = donutAngleRanges(for: categories, angles: angles)
+        let hoveredEntry = categories.first { $0.category == hoveredCategory }
+
         return HStack(alignment: .center, spacing: 20) {
-            Chart(Array(categories.enumerated()), id: \.offset) { _, entry in
-                SectorMark(angle: .value("Bytes", entry.bytes), innerRadius: .ratio(0.62), angularInset: 1.5)
-                    .foregroundStyle(colors[entry.category] ?? .gray)
+            Chart(Array(zip(categories, angles).enumerated()), id: \.offset) { _, pair in
+                let (entry, angle) = pair
+                SectorMark(angle: .value("Bytes", angle), innerRadius: .ratio(0.62), angularInset: 1.5)
+                    .foregroundStyle((colors[entry.category] ?? .gray).opacity(hoveredCategory == nil || hoveredCategory == entry.category ? 1 : 0.45))
             }
             .frame(width: 132, height: 132)
             .chartBackground { _ in
                 VStack(spacing: 2) {
-                    Text("Por tipo").font(.system(size: Self.captionSize)).foregroundStyle(.secondary)
-                    Text(formattedSize(totalBytes)).font(.system(size: Self.subheadlineSize, weight: .semibold))
+                    if let hoveredEntry {
+                        Text(LocalizedStringKey(hoveredEntry.category)).font(.system(size: Self.captionSize)).foregroundStyle(.secondary)
+                        Text(formattedSize(hoveredEntry.bytes)).font(.system(size: Self.subheadlineSize, weight: .semibold))
+                    } else {
+                        Text("Por tipo").font(.system(size: Self.captionSize)).foregroundStyle(.secondary)
+                        Text(formattedSize(totalBytes)).font(.system(size: Self.subheadlineSize, weight: .semibold))
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    let plotFrame = geometry[proxy.plotAreaFrame]
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case .active(let location):
+                                let center = CGPoint(x: plotFrame.midX, y: plotFrame.midY)
+                                let dx = location.x - center.x
+                                let dy = location.y - center.y
+                                let outerRadius = min(plotFrame.width, plotFrame.height) / 2
+                                let innerRadius = outerRadius * 0.62
+                                let radius = (dx * dx + dy * dy).squareRoot()
+                                guard radius >= innerRadius, radius <= outerRadius else {
+                                    hoveredCategory = nil
+                                    return
+                                }
+                                var angleDegrees = atan2(dx, -dy) * 180 / .pi
+                                if angleDegrees < 0 { angleDegrees += 360 }
+                                hoveredCategory = ranges.first { angleDegrees >= $0.start && angleDegrees < $0.end }?.category
+                            case .ended:
+                                hoveredCategory = nil
+                            }
+                        }
                 }
             }
 
@@ -183,7 +264,8 @@ struct StatsView: View {
                         Spacer()
                         Text(formattedSize(entry.bytes)).foregroundStyle(.secondary)
                     }
-                    .font(.system(size: Self.calloutSize))
+                    .font(.system(size: Self.calloutSize, weight: hoveredCategory == entry.category ? .semibold : .regular))
+                    .opacity(hoveredCategory == nil || hoveredCategory == entry.category ? 1 : 0.45)
                 }
             }
         }
