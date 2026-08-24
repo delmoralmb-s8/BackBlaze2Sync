@@ -1,10 +1,27 @@
 import SwiftUI
+import Charts
+
+/// Paleta pedida por Bernabe para las gráficas de Estadísticas. Con más de 8 categorías en un
+/// bucket real (Fotos/PDF/Documentos/Instaladores/Video/Audio/Comprimidos/Otros) los 5 colores
+/// originales se repetían y dos categorías distintas se veían idénticas (Video/PDF ambos rojo
+/// oscuro) — se agregaron 2 tintes más de los mismos colores para cubrir hasta 7 categorías
+/// reales sin repetir (Otros siempre sale gris aparte, ver `categoryColor`).
+private let statsChartPalette: [Color] = [
+    Color(red: 0x8B / 255, green: 0x00 / 255, blue: 0x00 / 255),  // Deep Red
+    Color(red: 0xD2 / 255, green: 0xB4 / 255, blue: 0x8C / 255),  // Marrón Pastel
+    Color(red: 0xB8 / 255, green: 0x73 / 255, blue: 0x33 / 255),  // Tan Leather
+    Color(red: 0xCD / 255, green: 0x7F / 255, blue: 0x32 / 255),  // Cuero Tan (bronze)
+    Color(red: 0x4A / 255, green: 0x2E / 255, blue: 0x1B / 255),  // Dark Wood Brown
+    Color(red: 0xB4 / 255, green: 0x59 / 255, blue: 0x59 / 255),  // Deep Red aclarado
+    Color(red: 0x90 / 255, green: 0x59 / 255, blue: 0x23 / 255),  // Bronce oscurecido
+]
 
 struct StatsView: View {
     @EnvironmentObject var rclone: RcloneManager
     @EnvironmentObject var connectionStore: ConnectionStore
 
     @State private var bucketStats: BucketStats?
+    @State private var hoveredDay: RcloneManager.DailyUpload?
     @State private var isScanning = false
     @State private var scanFailed = false
     // Bumped each time a scan starts or gets cancelled, so a completion handler from a scan the
@@ -89,14 +106,7 @@ struct StatsView: View {
                     Text("Por tipo de archivo")
                         .font(.system(size: Self.subheadlineSize))
                         .padding(.top, 4)
-                    ForEach(stats.categoryBytes, id: \.category) { entry in
-                        HStack {
-                            Text(LocalizedStringKey(entry.category))
-                            Spacer()
-                            Text(formattedSize(entry.bytes)).foregroundStyle(.secondary)
-                        }
-                        .font(.system(size: Self.calloutSize))
-                    }
+                    categoryDonut(stats.categoryBytes, totalBytes: stats.totalBytes)
                 }
             } else if isScanning {
                 Text("Escaneando el bucket completo… puede tardar en buckets grandes.")
@@ -115,6 +125,11 @@ struct StatsView: View {
                 .font(.system(size: Self.captionSize))
                 .foregroundStyle(.secondary)
 
+            let daily = rclone.dailyUploadMB()
+            if daily.contains(where: { $0.megabytes > 0 }) {
+                dailyUploadChart(daily)
+            }
+
             let activity = rclone.localActivityStats()
             if let average = activity.averageMBPerDayUploaded {
                 statCard(icon: "arrow.up.circle.fill", title: "Promedio subido por día", value: formattedMB(average) + "/día")
@@ -127,6 +142,104 @@ struct StatsView: View {
     }
 
     // MARK: - Helpers
+
+    /// Un color fijo por categoría (nunca por índice de arreglo): "Otros" siempre gris, y las
+    /// demás toman colores de la paleta en el orden en que aparecen — así "Otros" no desperdicia
+    /// un color de la paleta y dos categorías reales nunca terminan compartiendo color.
+    private func categoryColorMap(_ categories: [(category: String, bytes: Int64)]) -> [String: Color] {
+        var map: [String: Color] = [:]
+        var nextColorIndex = 0
+        for entry in categories where map[entry.category] == nil {
+            if entry.category == "Otros" {
+                map[entry.category] = Color.gray.opacity(0.5)
+            } else {
+                map[entry.category] = statsChartPalette[nextColorIndex % statsChartPalette.count]
+                nextColorIndex += 1
+            }
+        }
+        return map
+    }
+
+    private func categoryDonut(_ categories: [(category: String, bytes: Int64)], totalBytes: Int64) -> some View {
+        let colors = categoryColorMap(categories)
+        return HStack(alignment: .center, spacing: 20) {
+            Chart(Array(categories.enumerated()), id: \.offset) { _, entry in
+                SectorMark(angle: .value("Bytes", entry.bytes), innerRadius: .ratio(0.62), angularInset: 1.5)
+                    .foregroundStyle(colors[entry.category] ?? .gray)
+            }
+            .frame(width: 132, height: 132)
+            .chartBackground { _ in
+                VStack(spacing: 2) {
+                    Text("Por tipo").font(.system(size: Self.captionSize)).foregroundStyle(.secondary)
+                    Text(formattedSize(totalBytes)).font(.system(size: Self.subheadlineSize, weight: .semibold))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                ForEach(Array(categories.enumerated()), id: \.offset) { _, entry in
+                    HStack {
+                        Circle().fill(colors[entry.category] ?? .gray).frame(width: 9, height: 9)
+                        Text(LocalizedStringKey(entry.category))
+                        Spacer()
+                        Text(formattedSize(entry.bytes)).foregroundStyle(.secondary)
+                    }
+                    .font(.system(size: Self.calloutSize))
+                }
+            }
+        }
+    }
+
+    private func dailyUploadChart(_ daily: [RcloneManager.DailyUpload]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Chart(daily) { entry in
+                BarMark(x: .value("Día", entry.day, unit: .day), y: .value("MB", entry.megabytes))
+                    .foregroundStyle(statsChartPalette[0].opacity(hoveredDay?.day == entry.day ? 1 : 0.75))
+                    .cornerRadius(3)
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .frame(height: 88)
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case .active(let location):
+                                let originX = geometry[proxy.plotAreaFrame].origin.x
+                                guard let date: Date = proxy.value(atX: location.x - originX) else { return }
+                                hoveredDay = daily.min { a, b in
+                                    abs(a.day.timeIntervalSince(date)) < abs(b.day.timeIntervalSince(date))
+                                }
+                            case .ended:
+                                hoveredDay = nil
+                            }
+                        }
+                }
+            }
+            .overlay(alignment: .top) {
+                if let hoveredDay {
+                    Text("\(dayFormatter.string(from: hoveredDay.day)) · \(formattedMB(hoveredDay.megabytes))")
+                        .font(.system(size: Self.captionSize, weight: .semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+                        .offset(y: -20)
+                }
+            }
+
+            HStack {
+                Text("hace \(daily.count) días").foregroundStyle(.secondary)
+                Spacer()
+                Text("hoy").foregroundStyle(.secondary)
+            }
+            .font(.system(size: Self.captionSize))
+        }
+    }
+
+    private var dayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter
+    }
 
     private func statCard(icon: String, title: LocalizedStringKey, value: String) -> some View {
         HStack {
