@@ -3,6 +3,19 @@
     <channel>
         <title>BackBlaze2Sync</title>
         <item>
+            <title>1.2</title>
+            <pubDate>Mon, 24 Aug 2026 10:32:09 -0600</pubDate>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[BackBlaze2Sync 1.2
+
+New visual section in Statistics: a chart showing uploads by file type (with hover effects for each), and a graph of MB uploaded per day (last 14 days, with hover details showing date and size).
+More detailed file categories: Video, Audio, and Compressed categories added.
+Color adjustments: a more vibrant custom palette.]]></description>
+            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.2/BackBlaze2Sync-1.2.dmg" length="5255126" type="application/octet-stream" sparkle:edSignature="RVwzD/bsGWW889rI1BQ/zsba/cVXMyx5zoSOGmS+1eXzWhc1n/5TXWmtZdkGvz2IAUI0E+VTDDccO4ukJnSnCg=="/>
+        </item>
+        <item>
             <title>1.1</title>
             <pubDate>Sat, 22 Aug 2026 22:51:16 -0600</pubDate>
             <sparkle:version>2</sparkle:version>
