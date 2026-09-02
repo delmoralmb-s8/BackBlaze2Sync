@@ -53,7 +53,10 @@ struct BackBlaze2SyncApp: App {
                 .environmentObject(rclone)
                 .environmentObject(connectionStore)
                 .environment(\.locale, Locale(identifier: appLanguageCode))
-                .onAppear { appearanceIconController.start() }
+                .onAppear {
+                    appearanceIconController.start()
+                    rclone.activeConnectionRemotePrefix = { connectionStore.active?.remotePrefix }
+                }
         }
         .commands {
             // Replaces the default generic "About BackBlaze2Sync" with the same standard panel,
@@ -79,6 +82,9 @@ struct BackBlaze2SyncApp: App {
                 }
                 Button("Estadísticas") {
                     openWindow(id: "stats")
+                }
+                Button("Carpeta sincronizada…") {
+                    openWindow(id: "watchfolder")
                 }
             }
             // Reaches ExplorerView's own selection via NotificationCenter, the Commands closure
@@ -144,6 +150,18 @@ struct BackBlaze2SyncApp: App {
                 .environmentObject(connectionStore)
                 .environment(\.locale, Locale(identifier: appLanguageCode))
         }
+        WindowGroup(id: "watchfolder") {
+            WatchFolderView()
+                .environmentObject(rclone)
+                .environmentObject(connectionStore)
+                .environment(\.locale, Locale(identifier: appLanguageCode))
+        }
+        // Without this, macOS restores whatever frame this window had the LAST time it was open —
+        // stale and oversized now that the description text and "Subidas automáticas" collapse
+        // into a much shorter default view. .contentSize keeps the window matched to its actual
+        // SwiftUI content size instead (shrinking back down when collapsed, growing again when
+        // "Subidas automáticas recientes" is expanded).
+        .windowResizability(.contentSize)
         // Wires the standard "Preferencias… ⌘," app-menu item to the same options already
         // reachable from the ⚙️ popover in ContentView, no custom Commands needed for this one.
         Settings {

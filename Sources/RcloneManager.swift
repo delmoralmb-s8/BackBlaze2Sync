@@ -1,5 +1,18 @@
 import CryptoKit
 import Foundation
+import CoreServices
+
+/// Runs on whatever thread FSEventStream calls back on — pinned to DispatchQueue.main via
+/// FSEventStreamSetDispatchQueue in startWatchFolder(), so the MainActor hop below is safe.
+/// Must stay a plain global closure (no captures) to convert to the C function pointer
+/// FSEventStreamCallback expects; `self` travels through `clientCallBackInfo` instead.
+private let watchFolderEventCallback: FSEventStreamCallback = { _, clientCallBackInfo, _, _, _, _ in
+    guard let info = clientCallBackInfo else { return }
+    let manager = Unmanaged<RcloneManager>.fromOpaque(info).takeUnretainedValue()
+    MainActor.assumeIsolated {
+        manager.scheduleWatchFolderSync()
+    }
+}
 
 struct IntegrityMismatch: Identifiable {
     let id = UUID()
@@ -160,6 +173,75 @@ final class RcloneManager: ObservableObject {
     @Published var bandwidthLimitMBps: Double = 0
     @Published var parallelTransfers: Int = 4
     @Published var shutdownWhenDone = false
+    // Watch-folder state for the "Carpeta sincronizada" feature (WatchFolderView) — shared here,
+    // same as verifyAfterUpload etc above, so the Activo/borrado toggles stay in sync between
+    // that window and the "Opciones avanzadas" popover. watchFolderActive itself is NOT
+    // persisted on purpose — the interactive app always starts with "Activo" off, same as it
+    // always starts with no bandwidth limit — but the other three ARE, so the folder/destination/
+    // delete-mirror choice survives a relaunch even though "Activo" itself doesn't.
+    //
+    // A "keep syncing after quitting the app" mode (a LaunchAgent relaunching this same binary
+    // headless) was built and then reverted — macOS refused to launch the ad-hoc-signed (no paid
+    // Apple Developer ID) binary via launchd at all ("Launch Constraint Violation" / "Code
+    // Signature Invalid" SIGKILL, reproduced on a completely fresh build+registration, so it
+    // wasn't a stale-registration bug). Revisit only with a real Developer ID + proper signing.
+    @Published var watchFolderPath: String = UserDefaults.standard.string(forKey: "b2sync.watchFolderPath") ?? "" {
+        didSet {
+            UserDefaults.standard.set(watchFolderPath, forKey: "b2sync.watchFolderPath")
+            guard watchFolderPath != oldValue else { return }
+            // A fresh path (the user just picked a new one, e.g. after "La carpeta ya no
+            // existe") always deserves a clean slate rather than carrying over a stale warning
+            // — or a stale "already uploaded" cache — from whatever the old path was.
+            watchFolderMissing = false
+            watchFolderKnownEntries = [:]
+            guard watchFolderActive else { return }
+            startWatchFolder()
+        }
+    }
+    /// True when the watched folder itself (not just its contents) has disappeared — renamed or
+    /// deleted out from under the watcher. Checked explicitly in syncWatchFolder() so that case
+    /// short-circuits BEFORE the normal diff logic, which would otherwise read "folder gone" as
+    /// "every file in it just got deleted" and, with watchFolderDeleteMirrorsToBucket on, mirror
+    /// that as a mass delete in the bucket.
+    @Published var watchFolderMissing: Bool = UserDefaults.standard.bool(forKey: "b2sync.watchFolderMissing") {
+        didSet {
+            guard watchFolderMissing != oldValue else { return }
+            UserDefaults.standard.set(watchFolderMissing, forKey: "b2sync.watchFolderMissing")
+        }
+    }
+    /// One-shot trigger for the "your folder is gone" popup — separate from watchFolderMissing
+    /// itself (which also drives the persistent banner in WatchFolderView and gets checked by
+    /// syncWatchFolder) so dismissing the alert doesn't also silently clear the underlying
+    /// missing-state/banner. ContentView sets this true on every launch while still missing (see
+    /// refreshWatchFolderMissingState), not just the first time it's detected — the watcher only
+    /// runs while the app is open, so a rename/delete that happens while it's closed would
+    /// otherwise go unnoticed until whenever the user happens to reopen WatchFolderView on their
+    /// own.
+    @Published var showWatchFolderMissingAlert = false
+    // "" = bucket root, creates <folderName>/
+    @Published var watchFolderBucketDestination: String = UserDefaults.standard.string(forKey: "b2sync.watchFolderBucketDestination") ?? "" {
+        didSet { UserDefaults.standard.set(watchFolderBucketDestination, forKey: "b2sync.watchFolderBucketDestination") }
+    }
+    // Persisted (unlike the rest of this class's session-only toggles, e.g. bandwidth limit)
+    // specifically so closing and reopening the app resumes exactly where it left off — reading
+    // the value here does NOT itself start the watcher (a stored property's default-value
+    // initializer never fires didSet), so resumeWatchFolderIfNeeded() below is what actually
+    // re-starts it once at launch, called from ContentView's onAppear.
+    @Published var watchFolderActive: Bool = UserDefaults.standard.bool(forKey: "b2sync.watchFolderActive") {
+        didSet {
+            guard watchFolderActive != oldValue else { return }
+            UserDefaults.standard.set(watchFolderActive, forKey: "b2sync.watchFolderActive")
+            recordWatchFolderEvent(active: watchFolderActive)
+            watchFolderActive ? startWatchFolder() : stopWatchFolder()
+        }
+    }
+    @Published var watchFolderDeleteMirrorsToBucket: Bool = UserDefaults.standard.bool(forKey: "b2sync.watchFolderDeleteMirrorsToBucket") {
+        didSet { UserDefaults.standard.set(watchFolderDeleteMirrorsToBucket, forKey: "b2sync.watchFolderDeleteMirrorsToBucket") }
+    }
+    /// Set once at launch (see BackBlaze2SyncApp) so the watcher can build "remoteName:bucket/"
+    /// paths for whichever connection is active when a sync actually fires, without this class
+    /// needing to hold a reference to ConnectionStore.
+    var activeConnectionRemotePrefix: (() -> String?)?
     // nil = no countdown running. Ticks down from 30; reaching 0 shuts down for real.
     @Published var shutdownCountdown: Int?
     private var shutdownTimer: Timer?
@@ -316,6 +398,13 @@ final class RcloneManager: ObservableObject {
     /// which the log alone doesn't (it only keeps the last 5000 lines, history keeps 2000 events).
     func recordConnectionEvent(connected: Bool, name: String) {
         recordOperation(type: connected ? "Conectado" : "Desconectado", fileCount: 0, success: true, detail: name)
+    }
+
+    /// Lets HistoryView's watch-folder stats answer "when did this first turn on" / "is it
+    /// currently on" without a separate persisted flag — it's just the newest/oldest matching
+    /// event in the same history everything else already logs to.
+    private func recordWatchFolderEvent(active: Bool) {
+        recordOperation(type: active ? "Sincronización activada" : "Sincronización desactivada", fileCount: 0, success: true, remotePath: watchFolderTargetPath())
     }
 
     func clearHistory() {
@@ -1346,6 +1435,195 @@ final class RcloneManager: ObservableObject {
                 completion(success)
             }
         }
+    }
+
+    // MARK: - Carpeta sincronizada (watch folder)
+    //
+    // FSEventStream (native, no deps) reports that SOMETHING changed under watchFolderPath;
+    // it deliberately doesn't try to figure out exactly what, since a few seconds later we just
+    // rescan the top level and hand each entry to the same `copy`-based uploadLocalPaths every
+    // other upload path uses — rclone's own copy already skips files whose size/mtime didn't
+    // change, and copying a changed subfolder re-copies its whole tree, so this stays correct
+    // without needing per-file-event granularity.
+
+    private var watchStream: FSEventStreamRef?
+    private var watchDebounceTimer: Timer?
+
+    private struct WatchFolderEntry: Codable, Equatable {
+        let isDir: Bool
+        let modifiedAt: Date
+    }
+
+    /// Top-level name → (isDir, mtime) as of the last sync — diffed against a fresh scan both to
+    /// find removals (for the optional "borrar en bucket también" mirroring) AND to skip
+    /// re-uploading entries whose mtime hasn't changed since last time (see syncWatchFolder()).
+    /// Persisted (unlike the old in-memory-only version) specifically so relaunching the app
+    /// doesn't forget what it already confirmed uploaded — Bernabe found that without this, every
+    /// relaunch re-ran `rclone copy`/re-logged "Subida" for the SAME already-uploaded files, since
+    /// this reset to empty on every startWatchFolder() call and made everything look "new" again.
+    /// Explicitly reset to empty when the watched path itself changes (fresh folder = clean
+    /// slate) or when recovering from "carpeta no encontrada" — see those call sites.
+    private var watchFolderKnownEntries: [String: WatchFolderEntry] = {
+        guard let data = UserDefaults.standard.data(forKey: "b2sync.watchFolderKnownEntries"),
+              let decoded = try? JSONDecoder().decode([String: WatchFolderEntry].self, from: data)
+        else { return [:] }
+        return decoded
+    }() {
+        didSet {
+            if let data = try? JSONEncoder().encode(watchFolderKnownEntries) {
+                UserDefaults.standard.set(data, forKey: "b2sync.watchFolderKnownEntries")
+            }
+        }
+    }
+
+    /// Called once from ContentView's onAppear on every launch — watchFolderActive is persisted,
+    /// but a stored property's default-value initializer never triggers its own didSet, so
+    /// nothing would actually resume watching (or catch up on files added while the app was
+    /// closed) without this explicit kick. startWatchFolder() itself calls syncWatchFolder()
+    /// right away, which re-scans the folder's current top-level entries and re-uploads
+    /// (rclone's own copy skips whatever's already identical in the bucket) — so this doubles as
+    /// the "catch up on what I missed while closed" scan Bernabe asked for.
+    func resumeWatchFolderIfNeeded() {
+        guard watchFolderActive else { return }
+        startWatchFolder()
+    }
+
+    private func startWatchFolder() {
+        stopWatchFolder()
+        guard !watchFolderPath.isEmpty else { return }
+        // Deliberately does NOT reset watchFolderKnownEntries here — this runs on every resume
+        // (toggling Activo back on, or relaunching the app), and resetting it would make every
+        // already-uploaded file look "new" again. It's reset explicitly instead, only where a
+        // clean slate is actually correct: a brand-new watchFolderPath, or recovering from
+        // "carpeta no encontrada".
+        syncWatchFolder()
+        var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
+        guard let stream = FSEventStreamCreate(
+            kCFAllocatorDefault,
+            watchFolderEventCallback,
+            &context,
+            [watchFolderPath] as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+            1.0,
+            // kFSEventStreamCreateFlagWatchRoot is what makes FSEvents notify us AT ALL when the
+            // watched folder itself gets renamed or deleted (not something inside it) — without
+            // it, renaming/deleting the root produces zero events, so the "folder is gone" guard
+            // in syncWatchFolder() never even runs. (Confirmed missing after Bernabe tested a
+            // rename and the app never noticed.)
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagIgnoreSelf | kFSEventStreamCreateFlagWatchRoot)
+        ) else { return }
+        watchStream = stream
+        FSEventStreamSetDispatchQueue(stream, DispatchQueue.main)
+        FSEventStreamStart(stream)
+    }
+
+    private func stopWatchFolder() {
+        watchDebounceTimer?.invalidate()
+        watchDebounceTimer = nil
+        guard let stream = watchStream else { return }
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        watchStream = nil
+    }
+
+    /// A few seconds of quiet before syncing — avoids re-uploading on every single keystroke of
+    /// an editor autosaving into the watched folder, per the agreed plan.
+    fileprivate func scheduleWatchFolderSync() {
+        watchDebounceTimer?.invalidate()
+        watchDebounceTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { [weak self] _ in
+            self?.syncWatchFolder()
+        }
+    }
+
+    /// Where "Carpeta sincronizada" uploads land — bucket root or the chosen destination, plus
+    /// a folder named after the watched local folder. Exposed (not just used internally by
+    /// syncWatchFolder) so WatchFolderView and HistoryView can show/filter by the same path
+    /// without each re-deriving it.
+    func watchFolderTargetPath() -> String? {
+        guard !watchFolderPath.isEmpty, let prefix = activeConnectionRemotePrefix?(), !prefix.isEmpty else { return nil }
+        let base = watchFolderBucketDestination.isEmpty ? prefix : prefix + watchFolderBucketDestination + "/"
+        let folderName = (watchFolderPath as NSString).lastPathComponent
+        return base + folderName
+    }
+
+    /// Checks whether the configured watch folder still exists as a real directory, independent
+    /// of whether anything is actively watching it right now — syncWatchFolder() calls this
+    /// while a watcher is live, and BackBlaze2SyncApp/ContentView also call it once on every
+    /// interactive launch, since a rename/delete that happened while the app was fully closed
+    /// (and background mode off, so nothing was watching at all) would otherwise go unnoticed
+    /// until whoever happens to open WatchFolderView notices the banner on their own. Returns
+    /// the up-to-date `watchFolderMissing` value so callers can decide whether to alert.
+    @discardableResult
+    func refreshWatchFolderMissingState() -> Bool {
+        guard !watchFolderPath.isEmpty else { return false }
+        var isDir: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: watchFolderPath, isDirectory: &isDir) && isDir.boolValue
+        if !exists {
+            // Only pop the alert on a fresh transition here — while a watcher is actively
+            // running, this can get re-checked every debounce tick, and re-popping an already-
+            // dismissed alert every few seconds would be nagging. The app-launch call site
+            // (ContentView) forces it back on regardless, since THAT should always tell you.
+            if !watchFolderMissing {
+                watchFolderMissing = true
+                showWatchFolderMissingAlert = true
+                recordOperation(type: "Carpeta no encontrada", fileCount: 0, success: false, remotePath: watchFolderTargetPath())
+            }
+        } else if watchFolderMissing {
+            watchFolderMissing = false
+            watchFolderKnownEntries = [:]  // don't diff against whatever was known before the gap
+            recordOperation(type: "Carpeta encontrada de nuevo", fileCount: 0, success: true, remotePath: watchFolderTargetPath())
+        }
+        return watchFolderMissing
+    }
+
+    private func syncWatchFolder() {
+        guard watchFolderActive, !watchFolderPath.isEmpty, let targetFolder = watchFolderTargetPath() else { return }
+        guard !refreshWatchFolderMissingState() else { return }
+
+        let oldEntries = watchFolderKnownEntries
+        let newEntries = Self.watchFolderTopLevelEntries(at: watchFolderPath)
+        watchFolderKnownEntries = newEntries
+
+        // Only names that are new, or whose modification date changed since the last sync — an
+        // unchanged mtime means rclone would just re-confirm "already up to date" anyway, so
+        // skipping it here avoids spawning that process AND avoids logging a "Subida" history
+        // entry for files that didn't actually need (re)uploading.
+        func uploadCurrent() {
+            let namesToUpload = newEntries.filter { name, entry in oldEntries[name]?.modifiedAt != entry.modifiedAt }.keys
+            guard !namesToUpload.isEmpty else { return }
+            let localPaths = namesToUpload.map { watchFolderPath + "/" + $0 }
+            uploadLocalPaths(localPaths, toRemoteFolder: targetFolder, trackFailure: false)
+        }
+
+        let removedNames = Set(oldEntries.keys).subtracting(newEntries.keys)
+        guard watchFolderDeleteMirrorsToBucket, !removedNames.isEmpty else {
+            uploadCurrent()
+            return
+        }
+        // ponytail: a delete that loses the race with another running operation just logs and
+        // drops here (deleteItems has no retry queue, unlike uploads' pendingUploads) — acceptable
+        // for an opt-in, off-by-default mirror; upgrade to a queued retry if that proves annoying.
+        let items = removedNames.map { name in
+            RemotePathItem(path: targetFolder + "/" + name, name: name, isDir: oldEntries[name]?.isDir ?? false)
+        }
+        deleteItems(items) { _ in
+            uploadCurrent()
+        }
+    }
+
+    private static func watchFolderTopLevelEntries(at path: String) -> [String: WatchFolderEntry] {
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: path) else { return [:] }
+        var result: [String: WatchFolderEntry] = [:]
+        for name in names {
+            let fullPath = path + "/" + name
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: fullPath, isDirectory: &isDir) else { continue }
+            let attributes = try? FileManager.default.attributesOfItem(atPath: fullPath)
+            let modifiedAt = (attributes?[.modificationDate] as? Date) ?? Date.distantPast
+            result[name] = WatchFolderEntry(isDir: isDir.boolValue, modifiedAt: modifiedAt)
+        }
+        return result
     }
 
     // MARK: - Compress a remote folder into a .zip (B2 has no server-side compute for this —

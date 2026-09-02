@@ -3,154 +3,534 @@
   "strings": {
     "Estadísticas": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Stats" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Estadísticas" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Statistiques" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Estatísticas" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stats"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estadísticas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statistiques"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estatísticas"
+          }
+        }
       }
     },
     "Tu bucket ahora mismo": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Your bucket right now" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Tu bucket ahora mismo" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Votre bucket en ce moment" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Seu bucket agora" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your bucket right now"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu bucket ahora mismo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre bucket en ce moment"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu bucket agora"
+          }
+        }
       }
     },
     "Conéctate a un bucket para ver sus estadísticas.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Connect to a bucket to see its stats." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Conéctate a un bucket para ver sus estadísticas." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Connectez-vous à un bucket pour voir ses statistiques." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Conecte-se a um bucket para ver suas estatísticas." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to a bucket to see its stats."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conéctate a un bucket para ver sus estadísticas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous à un bucket pour voir ses statistiques."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecte-se a um bucket para ver suas estatísticas."
+          }
+        }
       }
     },
     "No se pudo escanear el bucket. Intenta \"Actualizar\".": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Couldn't scan the bucket. Try \"Update\"." } },
-        "es": { "stringUnit": { "state": "translated", "value": "No se pudo escanear el bucket. Intenta \"Actualizar\"." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Impossible d'analyser le bucket. Essayez \"Actualiser\"." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Não foi possível escanear o bucket. Tente \"Atualizar\"." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't scan the bucket. Try \"Update\"."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo escanear el bucket. Intenta \"Actualizar\"."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d'analyser le bucket. Essayez \"Actualiser\"."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível escanear o bucket. Tente \"Atualizar\"."
+          }
+        }
       }
     },
     "Archivo más antiguo": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Oldest file" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Archivo más antiguo" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Fichier le plus ancien" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Arquivo mais antigo" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oldest file"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo más antiguo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier le plus ancien"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivo mais antigo"
+          }
+        }
       }
     },
     "Archivo más pesado": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Largest file" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Archivo más pesado" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Fichier le plus volumineux" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Arquivo maior" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Largest file"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo más pesado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier le plus volumineux"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivo maior"
+          }
+        }
       }
     },
     "Carpeta más pesada": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Largest folder" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Carpeta más pesada" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Dossier le plus volumineux" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Pasta maior" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Largest folder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta más pesada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier le plus volumineux"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta maior"
+          }
+        }
       }
     },
     "Costo estimado en B2": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Estimated B2 cost" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Costo estimado en B2" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Coût B2 estimé" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Custo estimado no B2" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated B2 cost"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Costo estimado en B2"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coût B2 estimé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custo estimado no B2"
+          }
+        }
       }
     },
     "Por tipo de archivo": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "By file type" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Por tipo de archivo" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Par type de fichier" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Por tipo de arquivo" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By file type"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por tipo de archivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Par type de fichier"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por tipo de arquivo"
+          }
+        }
       }
     },
     "Fotos e imágenes": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Photos & images" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Fotos e imágenes" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Photos et images" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Fotos e imagens" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos & images"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotos e imágenes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos et images"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotos e imagens"
+          }
+        }
       }
     },
     "Documentos": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Documents" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Documentos" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Documents" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Documentos" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentos"
+          }
+        }
       }
     },
     "Instaladores": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Installers" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Instaladores" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Installateurs" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Instaladores" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installers"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instaladores"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installateurs"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instaladores"
+          }
+        }
       }
     },
     "Otros": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Other" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Otros" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Autres" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Outros" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autres"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outros"
+          }
+        }
       }
     },
     "Escaneando el bucket completo… puede tardar en buckets grandes.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Scanning the whole bucket… this can take a while for large buckets." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Escaneando el bucket completo… puede tardar en buckets grandes." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Analyse complète du bucket… cela peut prendre du temps pour les gros buckets." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Escaneando o bucket inteiro… pode demorar em buckets grandes." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning the whole bucket… this can take a while for large buckets."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escaneando el bucket completo… puede tardar en buckets grandes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyse complète du bucket… cela peut prendre du temps pour les gros buckets."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escaneando o bucket inteiro… pode demorar em buckets grandes."
+          }
+        }
       }
     },
     "Tu actividad en BackBlaze2Sync": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Your activity in BackBlaze2Sync" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Tu actividad en BackBlaze2Sync" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Votre activité dans BackBlaze2Sync" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Sua atividade no BackBlaze2Sync" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your activity in BackBlaze2Sync"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu actividad en BackBlaze2Sync"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre activité dans BackBlaze2Sync"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua atividade no BackBlaze2Sync"
+          }
+        }
       }
     },
     "Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket.": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Only counts what you did with this app (up to the last 2000 operations), not everything in the bucket." } },
-        "es": { "stringUnit": { "state": "translated", "value": "Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Ne compte que ce qui a été fait avec cette app (jusqu'aux 2000 dernières opérations), pas tout ce qu'il y a dans le bucket." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Conta apenas o que foi feito com este app (até as últimas 2000 operações), não tudo que há no bucket." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only counts what you did with this app (up to the last 2000 operations), not everything in the bucket."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo cuenta lo hecho con esta app (hasta las últimas 2000 operaciones), no todo lo que hay en el bucket."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne compte que ce qui a été fait avec cette app (jusqu'aux 2000 dernières opérations), pas tout ce qu'il y a dans le bucket."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conta apenas o que foi feito com este app (até as últimas 2000 operações), não tudo que há no bucket."
+          }
+        }
       }
     },
     "Promedio subido por día": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Average uploaded per day" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Promedio subido por día" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Moyenne envoyée par jour" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Média enviada por dia" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average uploaded per day"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promedio subido por día"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moyenne envoyée par jour"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Média enviada por dia"
+          }
+        }
       }
     },
     "Hora en la que más subes": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Hour you upload most" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Hora en la que más subes" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Heure où vous envoyez le plus" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Hora em que mais você envia" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hour you upload most"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora en la que más subes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heure où vous envoyez le plus"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora em que mais você envia"
+          }
+        }
       }
     },
     "Total descargado": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Total downloaded" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Total descargado" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Total téléchargé" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Total baixado" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total downloaded"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total descargado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total téléchargé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total baixado"
+          }
+        }
       }
     },
     "\"%@\" se va a borrar de B2. Esto no se puede deshacer.": {
@@ -6197,6 +6577,1406 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sucesso"
+          }
+        }
+      }
+    },
+    "Carpeta sincronizada…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced folder…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta sincronizada…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier synchronisé…"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta sincronizada…"
+          }
+        }
+      }
+    },
+    "Carpeta sincronizada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced folder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta sincronizada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier synchronisé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta sincronizada"
+          }
+        }
+      }
+    },
+    "Activo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actif"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativo"
+          }
+        }
+      }
+    },
+    "Carpeta local": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local folder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta local"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier local"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta local"
+          }
+        }
+      }
+    },
+    "Ninguna elegida": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None chosen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna elegida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun choisi"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma escolhida"
+          }
+        }
+      }
+    },
+    "Elegir…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir…"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolher…"
+          }
+        }
+      }
+    },
+    "Conexión B2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B2 connection"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexión B2"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion B2"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexão B2"
+          }
+        }
+      }
+    },
+    "Ninguna": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma"
+          }
+        }
+      }
+    },
+    "Destino en el bucket": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination in the bucket"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destino en el bucket"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination dans le bucket"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destino no bucket"
+          }
+        }
+      }
+    },
+    "Raíz del bucket (crear “%@/”)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bucket root (create “%@/”)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raíz del bucket (crear “%@/”)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Racine du bucket (créer “%@/”)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raiz do bucket (criar “%@/”)"
+          }
+        }
+      }
+    },
+    "Nueva carpeta en el bucket": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New folder in the bucket"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nueva carpeta en el bucket"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau dossier dans le bucket"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nova pasta no bucket"
+          }
+        }
+      }
+    },
+    "Nombre de la carpeta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre de la carpeta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom du dossier"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nome da pasta"
+          }
+        }
+      }
+    },
+    "La carpeta ya tiene archivos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The folder already has files"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta ya tiene archivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier contient déjà des fichiers"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta já tem arquivos"
+          }
+        }
+      }
+    },
+    "Entendido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entendido"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compris"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entendido"
+          }
+        }
+      }
+    },
+    "Esta carpeta ya tiene %lld archivo(s). Al activarla, la subida a B2 comenzará de inmediato.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder already has %lld file(s). Turning it on will start uploading to B2 right away."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta carpeta ya tiene %lld archivo(s). Al activarla, la subida a B2 comenzará de inmediato."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce dossier contient déjà %lld fichier(s). L'activer démarrera l'envoi vers B2 immédiatement."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta pasta já tem %lld arquivo(s). Ao ativá-la, o envio para a B2 vai começar imediatamente."
+          }
+        }
+      }
+    },
+    "Lo que se agregue, modifique o borre en esa carpeta se refleja en “": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything added, changed, or deleted in that folder is mirrored in “"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que se agregue, modifique o borre en esa carpeta se refleja en “"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout ce qui est ajouté, modifié ou supprimé dans ce dossier est reflété dans “"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que for adicionado, alterado ou excluído nessa pasta é refletido em “"
+          }
+        }
+      }
+    },
+    "” en B2.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” in B2."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” en B2."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” dans B2."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” na B2."
+          }
+        }
+      }
+    },
+    "Lo que se agregue o modifique en esa carpeta se sube a “": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything added or changed in that folder uploads to “"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que se agregue o modifique en esa carpeta se sube a “"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout ce qui est ajouté ou modifié dans ce dossier est envoyé vers “"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que for adicionado ou alterado nessa pasta é enviado para “"
+          }
+        }
+      }
+    },
+    "” en B2. Si borras algo local, no se borra en B2.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” in B2. Deleting something locally doesn't delete it in B2."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” en B2. Si borras algo local, no se borra en B2."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” dans B2. Supprimer quelque chose en local ne le supprime pas dans B2."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "” na B2. Excluir algo localmente não exclui na B2."
+          }
+        }
+      }
+    },
+    "Subidas automáticas recientes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent automatic uploads"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subidas automáticas recientes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envois automatiques récents"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envios automáticos recentes"
+          }
+        }
+      }
+    },
+    "Activa la carpeta sincronizada para empezar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the synced folder to get started."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa la carpeta sincronizada para empezar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active le dossier synchronisé pour commencer."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ative a pasta sincronizada para começar."
+          }
+        }
+      }
+    },
+    "Sin subidas todavía.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No uploads yet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin subidas todavía."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas encore d'envois."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda sem envios."
+          }
+        }
+      }
+    },
+    "(raíz del bucket)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(bucket root)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(raíz del bucket)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(racine du bucket)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(raiz do bucket)"
+          }
+        }
+      }
+    },
+    "(raíz del bucket) → “%@/”": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(bucket root) → “%@/”"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(raíz del bucket) → “%@/”"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(racine du bucket) → “%@/”"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(raiz do bucket) → “%@/”"
+          }
+        }
+      }
+    },
+    "Todas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todas"
+          }
+        }
+      }
+    },
+    "Carpeta sincronizada activa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced folder active"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta sincronizada activa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier synchronisé actif"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta sincronizada ativa"
+          }
+        }
+      }
+    },
+    "Sube automáticamente lo que cambie en la carpeta elegida en “Carpeta sincronizada…”": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically uploads whatever changes in the folder chosen in “Synced folder…”"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sube automáticamente lo que cambie en la carpeta elegida en “Carpeta sincronizada…”"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoie automatiquement ce qui change dans le dossier choisi dans “Dossier synchronisé…”"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envia automaticamente o que mudar na pasta escolhida em “Pasta sincronizada…”"
+          }
+        }
+      }
+    },
+    "Borrar en el bucket lo que se borre en la carpeta local": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete in the bucket whatever gets deleted in the local folder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar en el bucket lo que se borre en la carpeta local"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer dans le bucket ce qui est supprimé dans le dossier local"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir no bucket o que for excluído na pasta local"
+          }
+        }
+      }
+    },
+    "Corre como un proceso en segundo plano que sigue subiendo aunque cierres BackBlaze2Sync. No verás la ventana de la app mientras corre así.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs as a background process that keeps uploading even after you quit BackBlaze2Sync. You won't see the app's window while it runs this way."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corre como un proceso en segundo plano que sigue subiendo aunque cierres BackBlaze2Sync. No verás la ventana de la app mientras corre así."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S'exécute comme un processus en arrière-plan qui continue d'envoyer même après avoir quitté BackBlaze2Sync. Tu ne verras pas la fenêtre de l'app tant qu'elle fonctionne ainsi."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roda como um processo em segundo plano que continua enviando mesmo depois de fechar o BackBlaze2Sync. Você não vai ver a janela do app enquanto ele rodar assim."
+          }
+        }
+      }
+    },
+    "Después": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Después"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus tard"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depois"
+          }
+        }
+      }
+    },
+    "Sincronización activada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync turned on"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronización activada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisation activée"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronização ativada"
+          }
+        }
+      }
+    },
+    "Sincronización desactivada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync turned off"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronización desactivada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synchronisation désactivée"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronização desativada"
+          }
+        }
+      }
+    },
+    "Activada por primera vez": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First turned on"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activada por primera vez"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activée pour la première fois"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativada pela primeira vez"
+          }
+        }
+      }
+    },
+    "Estado actual": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current status"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado actual"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "État actuel"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado atual"
+          }
+        }
+      }
+    },
+    "Activa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativa"
+          }
+        }
+      }
+    },
+    "Inactiva": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactive"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactiva"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactive"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inativa"
+          }
+        }
+      }
+    },
+    "Inactiva desde ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactive since "
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactiva desde "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inactive depuis "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inativa desde "
+          }
+        }
+      }
+    },
+    "Archivos subidos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files uploaded"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivos subidos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers envoyés"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivos enviados"
+          }
+        }
+      }
+    },
+    "Velocidad promedio": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average speed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidad promedio"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vitesse moyenne"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidade média"
+          }
+        }
+      }
+    },
+    "Destino": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destino"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destination"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destino"
+          }
+        }
+      }
+    },
+    "Total subido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total uploaded"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total subido"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total envoyé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total enviado"
+          }
+        }
+      }
+    },
+    "Carpeta no encontrada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder not found"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta no encontrada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier introuvable"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta não encontrada"
+          }
+        }
+      }
+    },
+    "Carpeta encontrada de nuevo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder found again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta encontrada de nuevo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier retrouvé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta encontrada novamente"
+          }
+        }
+      }
+    },
+    "La carpeta ya no existe (¿la renombraste o la borraste?). Elige otra o desactiva la sincronización.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The folder no longer exists (did you rename or delete it?). Pick another one or turn off the sync."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta ya no existe (¿la renombraste o la borraste?). Elige otra o desactiva la sincronización."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier n'existe plus (l'as-tu renommé ou supprimé ?). Choisis-en un autre ou désactive la synchronisation."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta não existe mais (você a renomeou ou excluiu?). Escolha outra ou desative a sincronização."
+          }
+        }
+      }
+    },
+    "Carpeta sincronizada no encontrada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced folder not found"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta sincronizada no encontrada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier synchronisé introuvable"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta sincronizada não encontrada"
+          }
+        }
+      }
+    },
+    "Ir a Carpeta sincronizada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Synced Folder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir a Carpeta sincronizada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aller au dossier synchronisé"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir para Pasta sincronizada"
+          }
+        }
+      }
+    },
+    "La carpeta sincronizada te permite elegir una carpeta de trabajo para subir automáticamente a tu cuenta de Backblaze B2 todos los archivos que coloques o modifiques en ella. Es de una sola dirección, desde tu Mac hacia tu nube B2, por default no borra nada en B2 si borras algo local, hay una casilla aparte para cambiar eso. Funciona mientras la app está abierta. El resultado de lo sincronizado se verá en el Historial.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The synced folder lets you pick a working folder to automatically upload everything you add or change in it to your Backblaze B2 account. It's one-way, from your Mac to your B2 cloud, and by default it won't delete anything in B2 if you delete something locally, there's a separate checkbox to change that. It works while the app is open. The results show up in the History."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta sincronizada te permite elegir una carpeta de trabajo para subir automáticamente a tu cuenta de Backblaze B2 todos los archivos que coloques o modifiques en ella. Es de una sola dirección, desde tu Mac hacia tu nube B2, por default no borra nada en B2 si borras algo local, hay una casilla aparte para cambiar eso. Funciona mientras la app está abierta. El resultado de lo sincronizado se verá en el Historial."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier synchronisé te permet de choisir un dossier de travail pour envoyer automatiquement vers ton compte Backblaze B2 tout ce que tu ajoutes ou modifies dedans. C'est à sens unique, de ton Mac vers ton cloud B2, et par défaut rien n'est supprimé dans B2 si tu supprimes quelque chose en local, il y a une case à part pour changer ça. Ça fonctionne pendant que l'app est ouverte. Le résultat de la synchronisation apparaît dans l'Historique."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta sincronizada permite escolher uma pasta de trabalho para enviar automaticamente para sua conta Backblaze B2 tudo o que você adicionar ou modificar nela. É de mão única, do seu Mac para a sua nuvem B2, e por padrão nada é excluído na B2 se você excluir algo localmente, há uma caixa separada para mudar isso. Funciona enquanto o app está aberto. O resultado do que foi sincronizado aparece no Histórico."
+          }
+        }
+      }
+    },
+    "Qué es esto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is this"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qué es esto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qu'est-ce que c'est"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que é isso"
+          }
+        }
+      }
+    },
+    "Borrar en B2 al borrar local": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete in B2 when deleted locally"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrar en B2 al borrar local"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer dans B2 à la suppression locale"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir na B2 ao excluir localmente"
+          }
+        }
+      }
+    },
+    "Si borro un archivo en la carpeta local, también borrarlo en B2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If I delete a file in the local folder, also delete it in B2"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si borro un archivo en la carpeta local, también borrarlo en B2"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si je supprime un fichier dans le dossier local, le supprimer aussi dans B2"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eu excluir um arquivo na pasta local, também excluí-lo na B2"
           }
         }
       }

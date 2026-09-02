@@ -10,6 +10,7 @@
 		03BB57BB950D93CFC082575D /* ExplorerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5C80A0E9EB83E8C8313F0B /* ExplorerView.swift */; };
 		47DA9C5835DFC4989C9E1D84 /* QuickLookController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A385CE8B6E5E5B692986F12 /* QuickLookController.swift */; };
 		5DDB766BF8B33EDC895A4554 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4BA67939EB5001FCCF1866 /* Connection.swift */; };
+		682E02CE1F31AFD1229842F2 /* WatchFolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D2F9CD3F36AB8FF0B9FE84 /* WatchFolderView.swift */; };
 		7D93EAB3B20AC6CA2E2DDD1A /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37591B792E1023160ECD0583 /* GalleryView.swift */; };
 		841EF970FF5B046698C939C8 /* BackBlaze2SyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D46F69D21B75F59B82D1CCEA /* BackBlaze2SyncApp.swift */; };
 		84F18FD6EFB21EAEA416E3C2 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD05DA9B18F1701123797BA /* StatsView.swift */; };
@@ -32,6 +33,7 @@
 		383112DF2680E4F4B4621B96 /* ThumbnailStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailStore.swift; sourceTree = "<group>"; };
 		3F5C80A0E9EB83E8C8313F0B /* ExplorerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplorerView.swift; sourceTree = "<group>"; };
 		5A385CE8B6E5E5B692986F12 /* QuickLookController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLookController.swift; sourceTree = "<group>"; };
+		71D2F9CD3F36AB8FF0B9FE84 /* WatchFolderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchFolderView.swift; sourceTree = "<group>"; };
 		8A55105D7AB2979231D810E2 /* B2API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = B2API.swift; sourceTree = "<group>"; };
 		9C074CA2EBAA43A686F4A693 /* BackBlaze2Sync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BackBlaze2Sync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2FBE39808F45F55C9AA3594 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -85,6 +87,7 @@
 				D188E3DF590166BBBCE2BAB7 /* RcloneManager.swift */,
 				CDD05DA9B18F1701123797BA /* StatsView.swift */,
 				383112DF2680E4F4B4621B96 /* ThumbnailStore.swift */,
+				71D2F9CD3F36AB8FF0B9FE84 /* WatchFolderView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -190,6 +193,7 @@
 				D5660065EC00382BF5B9DB13 /* RcloneManager.swift in Sources */,
 				84F18FD6EFB21EAEA416E3C2 /* StatsView.swift in Sources */,
 				AD523346F2344D639B93AAF8 /* ThumbnailStore.swift in Sources */,
+				682E02CE1F31AFD1229842F2 /* WatchFolderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,7 +269,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -273,7 +277,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = mx.smh.backblaze2sync.app;
 				SDKROOT = macosx;
@@ -342,7 +346,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -350,7 +354,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = mx.smh.backblaze2sync.app;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;

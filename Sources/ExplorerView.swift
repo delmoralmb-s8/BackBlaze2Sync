@@ -455,10 +455,17 @@ struct ExplorerView: View {
                     newFolderName = ""
                     showNewFolderPrompt = true
                 } label: {
-                    Label("Nueva carpeta…", systemImage: "folder.badge.plus")
-                        .font(.system(size: toolbarBodySize))
+                    Image(systemName: "folder.badge.plus").font(.system(size: toolbarBodySize))
                 }
                 .disabled(rclone.isRunning)
+                .help("Nueva carpeta")
+
+                Button {
+                    openWindow(id: "watchfolder")
+                } label: {
+                    Image(systemName: "eye").font(.system(size: toolbarBodySize))
+                }
+                .help("Carpeta sincronizada…")
             }
 
             HStack {

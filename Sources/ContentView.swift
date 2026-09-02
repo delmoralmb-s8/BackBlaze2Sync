@@ -131,6 +131,22 @@ struct ContentView: View {
             if let active = connectionStore.active {
                 rclone.recordConnectionEvent(connected: true, name: connectionLabel(active))
             }
+            // Forced regardless of whether this is a fresh detection or one already known from a
+            // previous session — every time you open the app with a broken watch folder, you
+            // should be told, not just the one time it first happened.
+            if rclone.refreshWatchFolderMissingState() {
+                rclone.showWatchFolderMissingAlert = true
+            }
+            // "Activo" is persisted (see RcloneManager), so this is what actually resumes the
+            // watcher on launch — and since startWatchFolder() re-scans the folder's current
+            // contents right away, it also catches up on anything added while the app was closed.
+            rclone.resumeWatchFolderIfNeeded()
+        }
+        .alert("Carpeta sincronizada no encontrada", isPresented: $rclone.showWatchFolderMissingAlert) {
+            Button("Ir a Carpeta sincronizada") { openWindow(id: "watchfolder") }
+            Button("Después", role: .cancel) {}
+        } message: {
+            Text("La carpeta que elegiste para sincronizar ya no existe (¿la renombraste o la borraste?). Elige otra desde Carpeta sincronizada para seguir subiendo cambios.")
         }
         .sheet(isPresented: Binding(
             get: { rclone.shutdownCountdown != nil },
@@ -741,12 +757,24 @@ struct ContentView: View {
 struct SettingsView: View {
     @EnvironmentObject var rclone: RcloneManager
     @State private var showParallelTransfersHelp = false
+    // .popover content doesn't reliably inherit an ancestor's .environment(\.locale, ...) on
+    // macOS (it's presented via a separate NSPopover, not just nested in the same view tree) —
+    // same gotcha already worked around for every .sheet/.popover elsewhere in this app, applied
+    // explicitly below instead of assuming inheritance.
+    @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Verificar integridad después de subir (compara tamaño local vs remoto)", isOn: $rclone.verifyAfterUpload)
             Toggle("Apagar Mac cuando termine", isOn: $rclone.shutdownWhenDone)
                 .help("Pide confirmación antes de apagar de verdad, no se apaga solo sin avisar")
+
+            Divider()
+
+            Toggle("Carpeta sincronizada activa", isOn: $rclone.watchFolderActive)
+                .disabled(rclone.watchFolderPath.isEmpty)
+                .help("Sube automáticamente lo que cambie en la carpeta elegida en “Carpeta sincronizada…”")
+            Toggle("Borrar en el bucket lo que se borre en la carpeta local", isOn: $rclone.watchFolderDeleteMirrorsToBucket)
 
             Divider()
 
@@ -781,6 +809,7 @@ struct SettingsView: View {
                             .font(.callout)
                             .padding()
                             .frame(width: 260)
+                            .environment(\.locale, Locale(identifier: appLanguageCode))
                     }
                 }
                 Stepper(value: $rclone.parallelTransfers, in: 1...16) {
