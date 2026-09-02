@@ -249,6 +249,11 @@ struct WatchFolderView: View {
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
             rclone.watchFolderPath = url.path
+            // A newly picked folder always defaults back to the bucket root (creates
+            // "<folderName>/" there) — without this, whatever destination was chosen for a
+            // PREVIOUS folder stuck around and got reused for this unrelated one. The bucket-
+            // folder suggestions menu itself is untouched, still offered as an option to pick.
+            rclone.watchFolderBucketDestination = ""
             // Picking a folder here IS the "start syncing this" action — without this, choosing
             // a replacement folder (e.g. after "La carpeta ya no existe") left Activo exactly as
             // it was, which defaults to off on every launch, so nothing actually uploaded until
