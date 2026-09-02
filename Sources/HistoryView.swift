@@ -265,7 +265,7 @@ struct HistoryView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Image(systemName: icon.symbol).foregroundStyle(icon.color)
-                Text(record.type).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(record.type)).foregroundStyle(.secondary)
                 Text("\(record.fileCount) archivo(s)").foregroundStyle(.secondary)
                 Text(sizeLabel(for: record))
                     .foregroundStyle(.secondary)

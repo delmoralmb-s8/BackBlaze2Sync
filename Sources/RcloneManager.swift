@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import CoreServices
+import SwiftUI
 
 /// Runs on whatever thread FSEventStream calls back on — pinned to DispatchQueue.main via
 /// FSEventStreamSetDispatchQueue in startWatchFolder(), so the MainActor hop below is safe.
@@ -103,7 +104,10 @@ struct FailedOperation: Identifiable {
     let id: UUID
     let date: Date
     let type: String
-    let summary: String
+    // Text, not String — a plain String handed to Text(_:) always renders verbatim (the
+    // well-known gotcha elsewhere in this app), so "elemento(s)" baked into a joined String
+    // never localized no matter what the catalog said. Built via RcloneManager.itemsSummary(...).
+    let summary: Text
     let retry: () -> Void
 }
 
@@ -112,7 +116,7 @@ struct FailedOperation: Identifiable {
 struct PendingUpload: Identifiable {
     let id: UUID
     let date: Date
-    let summary: String
+    let summary: Text
     let execute: () -> Void
 }
 
@@ -414,7 +418,14 @@ final class RcloneManager: ObservableObject {
 
     // MARK: - Failed operations (separate from the log — actionable, with a retry button)
 
-    private func recordFailure(type: String, summary: String, retry: @escaping () -> Void) {
+    /// Shared "N elemento(s) → destino" summary builder for FailedOperation/PendingUpload — one
+    /// catalog key instead of five near-duplicates, and built as Text (not String) so
+    /// "elemento(s)" actually localizes when displayed.
+    private static func itemsSummary(count: Int, arrow destination: String) -> Text {
+        Text("\(count) elemento(s) → ") + Text(destination)
+    }
+
+    private func recordFailure(type: String, summary: Text, retry: @escaping () -> Void) {
         let id = UUID()
         let wrappedRetry: () -> Void = { [weak self] in
             self?.failedOperations.removeAll { $0.id == id }
@@ -1183,7 +1194,7 @@ final class RcloneManager: ObservableObject {
                     sourceRemotePath: Self.parentPath(of: items.first?.path ?? "")
                 )
                 if !success && trackFailure {
-                    self.recordFailure(type: "Mover", summary: "\(pairs.count) elemento(s) → \(toBase)") { [weak self] in
+                    self.recordFailure(type: "Mover", summary: Self.itemsSummary(count: pairs.count, arrow: toBase)) { [weak self] in
                         self?.moveItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)
                     }
                 }
@@ -1311,7 +1322,7 @@ final class RcloneManager: ObservableObject {
                     sourceRemotePath: Self.parentPath(of: items.first?.path ?? "")
                 )
                 if !success && trackFailure {
-                    self.recordFailure(type: "Copiar", summary: "\(pairs.count) elemento(s) → \(toBase)") { [weak self] in
+                    self.recordFailure(type: "Copiar", summary: Self.itemsSummary(count: pairs.count, arrow: toBase)) { [weak self] in
                         self?.copyItems(items, toBase: toBase, trackFailure: trackFailure, completion: completion)
                     }
                 }
@@ -1355,7 +1366,7 @@ final class RcloneManager: ObservableObject {
                     )
                 }
                 if !success && trackFailure {
-                    self.recordFailure(type: "Descarga", summary: "\(pairs.count) elemento(s) → \(toLocalFolder)") { [weak self] in
+                    self.recordFailure(type: "Descarga", summary: Self.itemsSummary(count: pairs.count, arrow: toLocalFolder)) { [weak self] in
                         self?.downloadItems(items, toLocalFolder: toLocalFolder, recordHistory: recordHistory, trackFailure: trackFailure, completion: completion)
                     }
                 }
@@ -1372,9 +1383,8 @@ final class RcloneManager: ObservableObject {
                 completion(false)
                 return
             }
-            let summary = "\(localPaths.count) elemento(s) → \(toRemoteFolder)"
-            log("[INFO] En cola: \(summary), esperando a que termine la subida actual.")
-            pendingUploads.append(PendingUpload(id: UUID(), date: Date(), summary: summary) { [weak self] in
+            log("[INFO] En cola: \(localPaths.count) elemento(s) → \(toRemoteFolder), esperando a que termine la subida actual.")
+            pendingUploads.append(PendingUpload(id: UUID(), date: Date(), summary: Self.itemsSummary(count: localPaths.count, arrow: toRemoteFolder)) { [weak self] in
                 self?.uploadLocalPaths(localPaths, toRemoteFolder: toRemoteFolder, recordHistory: recordHistory, trackFailure: trackFailure, completion: completion)
             })
             return
@@ -1412,7 +1422,7 @@ final class RcloneManager: ObservableObject {
                 )
             }
             if !success && trackFailure {
-                self.recordFailure(type: "Subida", summary: "\(pairs.count) elemento(s) → \(toRemoteFolder)") { [weak self] in
+                self.recordFailure(type: "Subida", summary: Self.itemsSummary(count: pairs.count, arrow: toRemoteFolder)) { [weak self] in
                     self?.uploadLocalPaths(localPaths, toRemoteFolder: toRemoteFolder, recordHistory: recordHistory, trackFailure: trackFailure, completion: completion)
                 }
             }
@@ -1649,7 +1659,7 @@ final class RcloneManager: ObservableObject {
         // that's already been cleaned up.
         func fail() {
             if trackFailure {
-                self.recordFailure(type: "Comprimir", summary: "\(item.name) → \(destFolder)") { [weak self] in
+                self.recordFailure(type: "Comprimir", summary: Text(item.name) + Text(" ") + Text("→ ") + Text(destFolder)) { [weak self] in
                     self?.compressFolder(item, trackFailure: trackFailure, completion: completion)
                 }
             }

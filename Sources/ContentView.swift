@@ -623,13 +623,13 @@ struct ContentView: View {
             ForEach(rclone.failedOperations) { failure in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(failure.type).font(.callout).bold()
+                        Text(LocalizedStringKey(failure.type)).font(.callout).bold()
                         Spacer()
                         Text(failure.date.formatted(date: .abbreviated, time: .standard))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
-                    Text(failure.summary)
+                    failure.summary
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack {
@@ -661,7 +661,7 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
-                    Text(pending.summary)
+                    pending.summary
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     HStack {

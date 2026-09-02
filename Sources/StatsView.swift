@@ -103,13 +103,13 @@ struct StatsView: View {
                     .font(.system(size: Self.calloutSize))
                     .foregroundStyle(.secondary)
             } else if let stats = bucketStats {
-                statCard(icon: "externaldrive.fill", title: "Tamaño total", value: formattedSize(stats.totalBytes))
-                statCard(icon: "clock.arrow.circlepath", title: "Archivo más antiguo", value: stats.oldestFileDate.map { $0.formatted(date: .long, time: .omitted) } ?? "—")
+                statCard(icon: "externaldrive.fill", title: "Tamaño total", value: Text(formattedSize(stats.totalBytes)))
+                statCard(icon: "clock.arrow.circlepath", title: "Archivo más antiguo", value: Text(stats.oldestFileDate.map { $0.formatted(date: .long, time: .omitted) } ?? "—"))
                 if let largest = stats.largestFile {
-                    statCard(icon: "doc.fill", title: "Archivo más pesado", value: "\(largest.name) (\(formattedSize(largest.bytes)))")
+                    statCard(icon: "doc.fill", title: "Archivo más pesado", value: Text("\(largest.name) (\(formattedSize(largest.bytes)))"))
                 }
                 if let folder = stats.largestTopFolder {
-                    statCard(icon: "folder.fill", title: "Carpeta más pesada", value: "\(folder.name) (\(formattedSize(folder.bytes)))")
+                    statCard(icon: "folder.fill", title: "Carpeta más pesada", value: Text("\(folder.name) (\(formattedSize(folder.bytes)))"))
                 }
                 statCard(icon: "dollarsign.circle.fill", title: "Costo estimado en B2", value: estimatedCost(totalBytes: stats.totalBytes))
 
@@ -143,12 +143,12 @@ struct StatsView: View {
 
             let activity = rclone.localActivityStats()
             if let average = activity.averageMBPerDayUploaded {
-                statCard(icon: "arrow.up.circle.fill", title: "Promedio subido por día", value: formattedMB(average) + "/día")
+                statCard(icon: "arrow.up.circle.fill", title: "Promedio subido por día", value: Text(formattedMB(average)) + Text("/día"))
             }
             if let hour = activity.peakUploadHour {
-                statCard(icon: "clock.fill", title: "Hora en la que más subes", value: String(format: "%02d:00", hour))
+                statCard(icon: "clock.fill", title: "Hora en la que más subes", value: Text(String(format: "%02d:00", hour)))
             }
-            statCard(icon: "arrow.down.circle.fill", title: "Total descargado", value: formattedMB(activity.totalDownloadedMB))
+            statCard(icon: "arrow.down.circle.fill", title: "Total descargado", value: Text(formattedMB(activity.totalDownloadedMB)))
         }
     }
 
@@ -323,11 +323,11 @@ struct StatsView: View {
         return formatter
     }
 
-    private func statCard(icon: String, title: LocalizedStringKey, value: String) -> some View {
+    private func statCard(icon: String, title: LocalizedStringKey, value: Text) -> some View {
         HStack {
             Label(title, systemImage: icon)
             Spacer()
-            Text(value).foregroundStyle(.secondary)
+            value.foregroundStyle(.secondary)
         }
         .font(.system(size: Self.calloutSize))
     }
@@ -363,10 +363,10 @@ struct StatsView: View {
         megabytes >= 1000 ? String(format: "%.1f GB", megabytes / 1024) : String(format: "%.1f MB", megabytes)
     }
 
-    private func estimatedCost(totalBytes: Int64) -> String {
+    private func estimatedCost(totalBytes: Int64) -> Text {
         let totalGB = Double(totalBytes) / 1_073_741_824
         let billableGB = max(0, totalGB - Self.freeGB)
         let monthlyCost = (billableGB / 1024) * Self.pricePerTBPerMonth
-        return String(format: "$%.2f/mes", monthlyCost)
+        return Text(String(format: "$%.2f", monthlyCost)) + Text("/mes")
     }
 }
