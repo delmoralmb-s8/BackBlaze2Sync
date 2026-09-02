@@ -3,6 +3,27 @@
     <channel>
         <title>BackBlaze2Sync</title>
         <item>
+            <title>1.3</title>
+            <pubDate>Wed, 02 Sep 2026 12:07:39 -0600</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[New feature: Synced Folder. Pick a folder on your Mac and everything you
+add or change in it uploads to your B2 bucket on its own, no need to drag
+anything into the Explorer.
+
+You can choose where it lands inside the bucket, and decide whether
+deleting a file locally also deletes it in B2 (off by default). If you
+rename or delete the folder by accident, the app lets you know.
+
+History now has its own view summarizing this sync: first activation,
+files uploaded, average speed, and total uploaded.
+
+Also: toggles instead of checkboxes, a more compact window, and several
+translation fixes.]]></description>
+            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.3/BackBlaze2Sync-1.3.dmg" length="5483667" type="application/octet-stream" sparkle:edSignature="tKJCCxyJMTNgqirwI0zR6ZH7nEvmWtFaJOkd6wv8cBZXlwdFqsHoYNOthgctmWFzMVMXlOXgVt0WpLquvRuJBw=="/>
+        </item>
+        <item>
             <title>1.2</title>
             <pubDate>Mon, 24 Aug 2026 10:32:09 -0600</pubDate>
             <sparkle:version>3</sparkle:version>
