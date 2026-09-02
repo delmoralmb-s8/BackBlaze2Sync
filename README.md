@@ -13,6 +13,7 @@ Cyberduck is great and everything, it already provides access to many services b
 - Automatic integrity verification after uploading a file.
 - Download links that force "Save file" instead of opening directly in the browser. (Option to customize expiration days)
 - General usage statistics (Now Available!)
+- Synced folder: auto-upload everything you add or change in a local folder straight to B2. (Now Available!)
 
 
 ## Main features
@@ -33,7 +34,7 @@ Cyberduck is great and everything, it already provides access to many services b
 ## How to build
 
 The `-destination "generic/platform=macOS"` is required so the build is universal
-(Apple Silicon + Intel) — without it, `xcodebuild` compiles only for the architecture
+(Apple Silicon + Intel): without it, `xcodebuild` compiles only for the architecture
 of the Mac where you run the command.
 
 ```bash
@@ -48,4 +49,5 @@ xcodebuild -project BackBlaze2Sync.xcodeproj -scheme BackBlaze2Sync -configurati
 |---|---|
 | ![Empty state](screenshots/empty-state.jpg) | ![New connection](screenshots/new-connection.jpg) |
 | ![Explorer](screenshots/explorer.jpg) | ![Photo gallery](screenshots/gallery.jpg) |
-| ![About](screenshots/about.jpg) | |
+| ![About](screenshots/about.jpg) | ![Synced folder](screenshots/cap3-badge.jpg) |
+| ![Operation history](screenshots/cap2-badge.jpg) | ![Statistics](screenshots/cap001-badge.jpg) |
