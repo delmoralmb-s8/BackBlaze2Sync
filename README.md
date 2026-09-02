@@ -2,7 +2,7 @@
 
 Native macOS app (SwiftUI) to use Backblaze B2 with a graphic interface. 
 
-## Yeah I'm aware  Cyberduck and Transmit already exists
+## Yeah I'm aware Cyberduck and Transmit already exists
 
 Cyberduck is great and everything, it already provides access to many services but in a generic way. I wanted BackBlaze2Sync to focus solely on Backblaze B2 to offer things that a generic client doesn't have:
 
@@ -12,7 +12,7 @@ Cyberduck is great and everything, it already provides access to many services b
 - Compress a remote folder to .zip without requiring manual download.
 - Automatic integrity verification after uploading a file.
 - Download links that force "Save file" instead of opening directly in the browser. (Option to customize expiration days)
-- General usage statistics (In development).
+- General usage statistics (Now Available!)
 
 
 ## Main features
