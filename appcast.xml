@@ -3,6 +3,20 @@
     <channel>
         <title>BackBlaze2Sync</title>
         <item>
+            <title>1.3.1</title>
+            <pubDate>Wed, 02 Sep 2026 13:15:55 -0600</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Bug fixes: several UI strings stayed in Spanish when using the app in
+English, French, or Portuguese (operation types, failed/pending uploads,
+estimated cost and daily average in Statistics). Now properly translated.
+
+Also: picking a new folder for Synced Folder now always defaults its
+bucket destination back to the root.]]></description>
+            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.3.1/BackBlaze2Sync-1.3.1.dmg" length="5490788" type="application/octet-stream" sparkle:edSignature="F6xJOVHJd2J90yOnVbpP6got4KYKUIQVJyYvz8s3cyMfJV1KG/P/wIJ8tcYXKwPkQ7k9qm+pg8Qqzs5TGtoLBQ=="/>
+        </item>
+        <item>
             <title>1.3</title>
             <pubDate>Wed, 02 Sep 2026 12:07:39 -0600</pubDate>
             <sparkle:version>4</sparkle:version>
@@ -35,23 +49,6 @@ New visual section in Statistics: a chart showing uploads by file type (with hov
 More detailed file categories: Video, Audio, and Compressed categories added.
 Color adjustments: a more vibrant custom palette.]]></description>
             <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.2/BackBlaze2Sync-1.2.dmg" length="5255126" type="application/octet-stream" sparkle:edSignature="RVwzD/bsGWW889rI1BQ/zsba/cVXMyx5zoSOGmS+1eXzWhc1n/5TXWmtZdkGvz2IAUI0E+VTDDccO4ukJnSnCg=="/>
-        </item>
-        <item>
-            <title>1.1</title>
-            <pubDate>Sat, 22 Aug 2026 22:51:16 -0600</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Menu bar overhaul: Preferences (⌘,), quick access to New Connection/History/Stats/Gallery, New Tab, Move/Copy selection in Edit.
-
-New About panel with credits + GitHub link.
-
-Real auto-updates via Sparkle (Check for Updates…).
-
-Help menu: Report an Issue (GitHub) and Send Feedback (email).
-
-New Stats window: bucket size, oldest/largest file, file types, estimated B2 cost, upload activity.]]></description>
-            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.1/BackBlaze2Sync-1.1.dmg" length="5130668" type="application/octet-stream" sparkle:edSignature="rjRAC5g/IFt0hBxzMjrdIW5ndZiTKdO4wq/KoQMwX12Ianwq2vjITrvHVv+in1SzmWe7UqPCDp+TZOEGC8v+Cg=="/>
         </item>
     </channel>
 </rss>
