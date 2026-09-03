@@ -505,9 +505,19 @@ struct ExplorerView: View {
                     // ponytail: ternary-of-literals into Button(_:)/.help(_:) resolves to the
                     // verbatim StringProtocol overload — LocalizedStringKey(_:) wrap fixes it.
                     Button(LocalizedStringKey(allSelected ? "Deseleccionar todo" : "Seleccionar todo")) { toggleSelectAll() }
-                    Button("Galería de fotos") { openWindow(id: "gallery", value: rclone.explorerPath) }
-                        .disabled(!currentFolderHasImages)
-                        .help(currentFolderHasImages ? LocalizedStringKey("Ver las imágenes de esta carpeta") : LocalizedStringKey("Esta carpeta no tiene imágenes"))
+                    Button {
+                        openWindow(id: "gallery", value: rclone.explorerPath)
+                    } label: {
+                        Label("Galería de fotos", systemImage: "photo.artframe")
+                            .font(.system(size: 15, weight: .medium))
+                            // "Oscilación" (wiggle), repeating every 2s while this is actually
+                            // clickable — draws the eye to it once the current folder turns out
+                            // to have photos, quiet again once you navigate away from one that does.
+                            .wiggleWhenActive(currentFolderHasImages)
+                    }
+                    .controlSize(.large)
+                    .disabled(!currentFolderHasImages)
+                    .help(currentFolderHasImages ? LocalizedStringKey("Ver las imágenes de esta carpeta") : LocalizedStringKey("Esta carpeta no tiene imágenes"))
                     if !selectedPaths.isEmpty {
                         Button("Deseleccionar") { selectedPaths.removeAll() }
                             .keyboardShortcut(.escape, modifiers: [])

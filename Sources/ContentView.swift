@@ -1,6 +1,20 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension View {
+    /// "Oscilación" (wiggle), repeating every 3s while `isActive` — `.wiggle` itself needs
+    /// macOS 15+ (this app's deployment target is 14.0), so this just quietly skips the
+    /// animation on older systems instead of failing to build.
+    @ViewBuilder
+    func wiggleWhenActive(_ isActive: Bool) -> some View {
+        if #available(macOS 15.0, *) {
+            self.symbolEffect(.wiggle, options: .repeat(.periodic(delay: 2)), isActive: isActive)
+        } else {
+            self
+        }
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var rclone: RcloneManager
     @EnvironmentObject var connectionStore: ConnectionStore
@@ -379,9 +393,14 @@ struct ContentView: View {
 
                 Button {
                     openWindow(id: "history")
+                    rclone.recentWatchFolderUpload = false
                 } label: {
                     Label("Historial de operaciones", systemImage: "clock.arrow.circlepath")
                         .labelStyle(.iconOnly)
+                        // Wiggles once a Carpeta sincronizada upload lands, so you notice there's
+                        // something new to see without having to keep this window open — stops
+                        // as soon as you actually open History (see the button action above).
+                        .wiggleWhenActive(rclone.recentWatchFolderUpload)
                 }
                 .help("Historial de operaciones")
 

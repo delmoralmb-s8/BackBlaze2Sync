@@ -242,6 +242,11 @@ final class RcloneManager: ObservableObject {
     @Published var watchFolderDeleteMirrorsToBucket: Bool = UserDefaults.standard.bool(forKey: "b2sync.watchFolderDeleteMirrorsToBucket") {
         didSet { UserDefaults.standard.set(watchFolderDeleteMirrorsToBucket, forKey: "b2sync.watchFolderDeleteMirrorsToBucket") }
     }
+    /// Set true right after a Carpeta sincronizada upload finishes successfully, so ContentView
+    /// can wiggle the History toolbar button to point at it — not persisted, and not
+    /// @Published-observed anywhere else, purely a one-shot "look over here" nudge. Cleared by
+    /// ContentView itself once the user actually opens History.
+    @Published var recentWatchFolderUpload = false
     /// Set once at launch (see BackBlaze2SyncApp) so the watcher can build "remoteName:bucket/"
     /// paths for whichever connection is active when a sync actually fires, without this class
     /// needing to hold a reference to ConnectionStore.
@@ -1603,7 +1608,9 @@ final class RcloneManager: ObservableObject {
             let namesToUpload = newEntries.filter { name, entry in oldEntries[name]?.modifiedAt != entry.modifiedAt }.keys
             guard !namesToUpload.isEmpty else { return }
             let localPaths = namesToUpload.map { watchFolderPath + "/" + $0 }
-            uploadLocalPaths(localPaths, toRemoteFolder: targetFolder, trackFailure: false)
+            uploadLocalPaths(localPaths, toRemoteFolder: targetFolder, trackFailure: false) { [weak self] success in
+                if success { self?.recentWatchFolderUpload = true }
+            }
         }
 
         let removedNames = Set(oldEntries.keys).subtracting(newEntries.keys)
