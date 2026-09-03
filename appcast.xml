@@ -3,6 +3,17 @@
     <channel>
         <title>BackBlaze2Sync</title>
         <item>
+            <title>1.3.2</title>
+            <pubDate>Thu, 03 Sep 2026 11:01:06 -0600</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Photo gallery button now shows an icon and label, and gently wiggles
+when the current folder has photos. The History button wiggles the same
+way once a Synced folder upload finishes, until you open it.]]></description>
+            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.3.2/BackBlaze2Sync-1.3.2.dmg" length="5508451" type="application/octet-stream" sparkle:edSignature="gry4OBitsBFFUONpX0XfLcdwAG/6deqZcYAYQkrlrQ00Fb5r1H4dfqZKK5aPzcyxHbo8p5mRXZx4Zme754Z+Cg=="/>
+        </item>
+        <item>
             <title>1.3.1</title>
             <pubDate>Wed, 02 Sep 2026 13:15:55 -0600</pubDate>
             <sparkle:version>5</sparkle:version>
@@ -36,19 +47,6 @@ files uploaded, average speed, and total uploaded.
 Also: toggles instead of checkboxes, a more compact window, and several
 translation fixes.]]></description>
             <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.3/BackBlaze2Sync-1.3.dmg" length="5483667" type="application/octet-stream" sparkle:edSignature="tKJCCxyJMTNgqirwI0zR6ZH7nEvmWtFaJOkd6wv8cBZXlwdFqsHoYNOthgctmWFzMVMXlOXgVt0WpLquvRuJBw=="/>
-        </item>
-        <item>
-            <title>1.2</title>
-            <pubDate>Mon, 24 Aug 2026 10:32:09 -0600</pubDate>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[BackBlaze2Sync 1.2
-
-New visual section in Statistics: a chart showing uploads by file type (with hover effects for each), and a graph of MB uploaded per day (last 14 days, with hover details showing date and size).
-More detailed file categories: Video, Audio, and Compressed categories added.
-Color adjustments: a more vibrant custom palette.]]></description>
-            <enclosure url="https://github.com/delmoralmb-s8/BackBlaze2Sync/releases/download/v1.2/BackBlaze2Sync-1.2.dmg" length="5255126" type="application/octet-stream" sparkle:edSignature="RVwzD/bsGWW889rI1BQ/zsba/cVXMyx5zoSOGmS+1eXzWhc1n/5TXWmtZdkGvz2IAUI0E+VTDDccO4ukJnSnCg=="/>
         </item>
     </channel>
 </rss>
