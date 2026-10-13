@@ -2,17 +2,17 @@ import SwiftUI
 import AppKit
 
 // Watches a local folder with FSEventStream and auto-uploads via RcloneManager's existing
-// copy/upload queue — see project_watch_folder_plan memory for the agreed v1 scope.
+// copy/upload queue, see project_watch_folder_plan memory for the agreed v1 scope.
 struct WatchFolderView: View {
     @EnvironmentObject var connectionStore: ConnectionStore
     @EnvironmentObject var rclone: RcloneManager
     // .popover content doesn't reliably inherit an ancestor's .environment(\.locale, ...) on
-    // macOS (it's presented via a separate NSPopover, not just nested in the same view tree) —
+    // macOS (it's presented via a separate NSPopover, not just nested in the same view tree),
     // confirmed by Bernabe: switching the app language left this screen's popover stuck in
     // Spanish. Applied explicitly to the popover content below instead of assuming inheritance.
     @AppStorage("appLanguageCode") private var appLanguageCode: String = "es"
 
-    /// First few real folders at the bucket root, offered as quick destination picks — fetched
+    /// First few real folders at the bucket root, offered as quick destination picks, fetched
     /// once when this view appears via the same side-channel listing ExplorerView's outline uses
     /// for on-demand children (listEntries), so it doesn't touch remoteEntries/pickerEntries.
     @State private var bucketRootFolders: [String] = []
@@ -33,7 +33,7 @@ struct WatchFolderView: View {
         rclone.watchFolderPath.isEmpty ? "" : URL(fileURLWithPath: rclone.watchFolderPath).lastPathComponent
     }
 
-    /// Built as `Text`, not `String` — a plain String handed to Text(_:) always renders
+    /// Built as `Text`, not `String`, a plain String handed to Text(_:) always renders
     /// verbatim (see HistoryView.detailLine's comment for the same gotcha), so the literal
     /// "(raíz del bucket)" phrasing would never localize if this returned String instead.
     private var destinationDisplayText: Text {
@@ -183,7 +183,7 @@ struct WatchFolderView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 // Without this, Text's ideal width is "however wide it needs to be to stay on
-                // one line" — with .windowResizability(.contentSize) on the window, THAT is what
+                // one line", with .windowResizability(.contentSize) on the window, THAT is what
                 // was actually forcing the whole window wide, not the rows above. This is what
                 // makes it wrap within the fixed 380pt frame below instead.
                 .fixedSize(horizontal: false, vertical: true)
@@ -228,7 +228,7 @@ struct WatchFolderView: View {
             }
         }
         .padding()
-        // A fixed width, not just a minimum — with .windowResizability(.contentSize) on the
+        // A fixed width, not just a minimum, with .windowResizability(.contentSize) on the
         // window, any un-bounded child (an un-wrapped long line, an over-wide menu label) could
         // otherwise push the window's ideal width past whatever minWidth alone asked for. Pinning
         // it here is what actually keeps the window this narrow now that the caption text and
@@ -248,13 +248,12 @@ struct WatchFolderView: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
-            rclone.watchFolderPath = url.path
             // A newly picked folder always defaults back to the bucket root (creates
-            // "<folderName>/" there) — without this, whatever destination was chosen for a
-            // PREVIOUS folder stuck around and got reused for this unrelated one. The bucket-
-            // folder suggestions menu itself is untouched, still offered as an option to pick.
+            // "<folderName>/" there). Set this first because assigning watchFolderPath can
+            // immediately start a watcher that is already active.
             rclone.watchFolderBucketDestination = ""
-            // Picking a folder here IS the "start syncing this" action — without this, choosing
+            rclone.watchFolderPath = url.path
+            // Picking a folder here IS the "start syncing this" action. Without this, choosing
             // a replacement folder (e.g. after "La carpeta ya no existe") left Activo exactly as
             // it was, which defaults to off on every launch, so nothing actually uploaded until
             // the user also separately remembered to flip Activo back on themselves.
