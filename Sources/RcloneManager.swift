@@ -1018,24 +1018,37 @@ final class RcloneManager: ObservableObject {
         task.standardOutput = outPipe
         task.standardError = errPipe
 
-        task.terminationHandler = { proc in
-            let data = outPipe.fileHandleForReading.readDataToEndOfFile()
-            let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-            Task { @MainActor in
-                let decoded = proc.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: data)) : nil
-                // .bzEmpty is the placeholder file createFolder() drops to make empty folders visible — hide it.
-                let sorted = (decoded ?? [])
-                    .filter { $0.Name != ".bzEmpty" }
-                    .sorted { $0.Name.localizedStandardCompare($1.Name) == .orderedAscending }
-                let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-                completion(sorted, decoded != nil, (errorText?.isEmpty ?? true) ? nil : errorText)
-            }
-        }
-
         do {
             try task.run()
         } catch {
             completion([], false, error.localizedDescription)
+            return
+        }
+        let readQueue = DispatchQueue.global(qos: .utility)
+        let group = DispatchGroup()
+        var output = Data()
+        var error = Data()
+        group.enter()
+        readQueue.async {
+            output = outPipe.fileHandleForReading.readDataToEndOfFile()
+            group.leave()
+        }
+        group.enter()
+        readQueue.async {
+            error = errPipe.fileHandleForReading.readDataToEndOfFile()
+            group.leave()
+        }
+        group.notify(queue: readQueue) {
+            task.waitUntilExit()
+            Task { @MainActor in
+                let decoded = task.terminationStatus == 0 ? (try? JSONDecoder().decode([RemoteEntry].self, from: output)) : nil
+                // .bzEmpty is the placeholder file createFolder() drops to make empty folders visible, hide it.
+                let sorted = (decoded ?? [])
+                    .filter { $0.Name != ".bzEmpty" }
+                    .sorted { $0.Name.localizedStandardCompare($1.Name) == .orderedAscending }
+                let errorText = String(data: error, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                completion(sorted, decoded != nil, (errorText?.isEmpty ?? true) ? nil : errorText)
+            }
         }
     }
 
@@ -1503,6 +1516,11 @@ final class RcloneManager: ObservableObject {
         startWatchFolder()
     }
 
+    func pauseWatchFolderForConnectionChange() {
+        guard watchFolderActive else { return }
+        watchFolderActive = false
+    }
+
     private func startWatchFolder() {
         stopWatchFolder()
         guard !watchFolderPath.isEmpty else { return }
@@ -1598,24 +1616,29 @@ final class RcloneManager: ObservableObject {
 
         let oldEntries = watchFolderKnownEntries
         let newEntries = Self.watchFolderTopLevelEntries(at: watchFolderPath)
-        watchFolderKnownEntries = newEntries
 
         // Only names that are new, or whose modification date changed since the last sync — an
         // unchanged mtime means rclone would just re-confirm "already up to date" anyway, so
         // skipping it here avoids spawning that process AND avoids logging a "Subida" history
         // entry for files that didn't actually need (re)uploading.
-        func uploadCurrent() {
+        func uploadCurrent(completion: @escaping (Bool) -> Void) {
             let namesToUpload = newEntries.filter { name, entry in oldEntries[name]?.modifiedAt != entry.modifiedAt }.keys
-            guard !namesToUpload.isEmpty else { return }
+            guard !namesToUpload.isEmpty else {
+                completion(true)
+                return
+            }
             let localPaths = namesToUpload.map { watchFolderPath + "/" + $0 }
             uploadLocalPaths(localPaths, toRemoteFolder: targetFolder, trackFailure: false) { [weak self] success in
                 if success { self?.recentWatchFolderUpload = true }
+                completion(success)
             }
         }
 
         let removedNames = Set(oldEntries.keys).subtracting(newEntries.keys)
         guard watchFolderDeleteMirrorsToBucket, !removedNames.isEmpty else {
-            uploadCurrent()
+            uploadCurrent { [weak self] success in
+                if success { self?.watchFolderKnownEntries = newEntries }
+            }
             return
         }
         // ponytail: a delete that loses the race with another running operation just logs and
@@ -1624,8 +1647,11 @@ final class RcloneManager: ObservableObject {
         let items = removedNames.map { name in
             RemotePathItem(path: targetFolder + "/" + name, name: name, isDir: oldEntries[name]?.isDir ?? false)
         }
-        deleteItems(items) { _ in
-            uploadCurrent()
+        deleteItems(items) { [weak self] deleted in
+            guard deleted else { return }
+            uploadCurrent { uploaded in
+                if uploaded { self?.watchFolderKnownEntries = newEntries }
+            }
         }
     }
 

@@ -310,6 +310,7 @@ struct ContentView: View {
                         ForEach(connectionStore.connections) { conn in
                             Button {
                                 let wasAlreadyActive = conn.id == connectionStore.activeID
+                                if !wasAlreadyActive { rclone.pauseWatchFolderForConnectionChange() }
                                 connectionStore.select(conn.id)
                                 if !wasAlreadyActive { rclone.recordConnectionEvent(connected: true, name: connectionLabel(conn)) }
                             } label: {
@@ -559,6 +560,7 @@ struct ContentView: View {
 
     private func disconnectActive() {
         guard let target = connectionStore.active else { return }
+        rclone.pauseWatchFolderForConnectionChange()
         connectionStore.remove(target.id)
         rclone.deleteRemote(name: target.remoteName) { _ in }
         B2CredentialsStore.delete(for: target.remoteName)
@@ -597,6 +599,7 @@ struct ContentView: View {
                     return
                 }
                 B2CredentialsStore.save(B2Credentials(accountID: accountID, appKey: appKey), for: remoteName)
+                rclone.pauseWatchFolderForConnectionChange()
                 connectionStore.addOrUpdate(Connection(name: name, remoteName: remoteName, bucket: bucket))
                 rclone.recordConnectionEvent(connected: true, name: "\(name) (\(bucket))")
                 showNewConnectionSheet = false
