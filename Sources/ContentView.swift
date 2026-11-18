@@ -158,6 +158,7 @@ struct ContentView: View {
         }
         .alert("Carpeta sincronizada no encontrada", isPresented: $rclone.showWatchFolderMissingAlert) {
             Button("Ir a Carpeta sincronizada") { openWindow(id: "watchfolder") }
+            Button("Desactivar sincronización") { rclone.watchFolderActive = false }
             Button("Después", role: .cancel) {}
         } message: {
             Text("La carpeta que elegiste para sincronizar ya no existe (¿la renombraste o la borraste?). Elige otra desde Carpeta sincronizada para seguir subiendo cambios.")

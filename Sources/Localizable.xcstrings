@@ -8372,6 +8372,62 @@
           }
         }
       }
+    },
+    "La carpeta que elegiste para sincronizar ya no existe (¿la renombraste o la borraste?). Elige otra desde Carpeta sincronizada para seguir subiendo cambios.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The folder you chose to sync no longer exists (did you rename or delete it?). Pick another one from Synced folder to keep uploading changes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La carpeta que elegiste para sincronizar ya no existe (¿la renombraste o la borraste?). Elige otra desde Carpeta sincronizada para seguir subiendo cambios."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le dossier que tu as choisi pour la synchronisation n'existe plus (l'as-tu renommé ou supprimé ?). Choisis-en un autre depuis Dossier synchronisé pour continuer à envoyer les changements."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A pasta que você escolheu para sincronizar não existe mais (você a renomeou ou excluiu?). Escolha outra em Pasta sincronizada para continuar enviando as alterações."
+          }
+        }
+      }
+    },
+    "Desactivar sincronización": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off sync"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivar sincronización"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Désactiver la synchronisation"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desativar sincronização"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

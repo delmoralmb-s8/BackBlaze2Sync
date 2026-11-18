@@ -236,6 +236,12 @@ final class RcloneManager: ObservableObject {
             guard watchFolderActive != oldValue else { return }
             UserDefaults.standard.set(watchFolderActive, forKey: "b2sync.watchFolderActive")
             recordWatchFolderEvent(active: watchFolderActive)
+            // Turned off = the user doesn't care about this folder anymore, so a missing folder
+            // must stop nagging (banner and popup) until they turn it back on.
+            if !watchFolderActive {
+                watchFolderMissing = false
+                showWatchFolderMissingAlert = false
+            }
             watchFolderActive ? startWatchFolder() : stopWatchFolder()
         }
     }
@@ -1589,7 +1595,8 @@ final class RcloneManager: ObservableObject {
     /// the up-to-date `watchFolderMissing` value so callers can decide whether to alert.
     @discardableResult
     func refreshWatchFolderMissingState() -> Bool {
-        guard !watchFolderPath.isEmpty else { return false }
+        // Inactive sync never complains about a missing folder (nothing is being uploaded).
+        guard watchFolderActive, !watchFolderPath.isEmpty else { return false }
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: watchFolderPath, isDirectory: &isDir) && isDir.boolValue
         if !exists {
