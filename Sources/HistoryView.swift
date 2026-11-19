@@ -202,6 +202,10 @@ struct HistoryView: View {
     private static let eventTypes: Set<String> = [
         "Conectado", "Desconectado", "Sincronización activada", "Sincronización desactivada",
         "Carpeta no encontrada", "Carpeta encontrada de nuevo",
+        "Renombrar", "Nueva carpeta", "URL generada", "Reintento",
+        "Verificación de tamaño", "Verificación profunda",
+        "Carpeta cambiada", "Destino cambiado", "Borrado en B2 activado", "Borrado en B2 desactivado",
+        "App actualizada", "Apagado programado", "Apagado cancelado", "Mac apagada",
     ]
 
     @ViewBuilder
@@ -221,12 +225,32 @@ struct HistoryView: View {
         case "Sincronización desactivada": return ("eye.slash.circle", .secondary)
         case "Carpeta no encontrada": return ("exclamationmark.triangle.fill", .orange)
         case "Carpeta encontrada de nuevo": return ("checkmark.circle.fill", .green)
+        case "Renombrar": return ("pencil.circle.fill", .blue)
+        case "Nueva carpeta": return ("folder.badge.plus", .blue)
+        case "URL generada": return ("link.badge.plus", .blue)
+        case "Reintento": return ("arrow.clockwise.circle.fill", .orange)
+        case "Verificación de tamaño", "Verificación profunda": return ("checkmark.shield.fill", .green)
+        case "Carpeta cambiada": return ("folder.circle.fill", .blue)
+        case "Destino cambiado": return ("arrow.triangle.turn.up.right.circle.fill", .blue)
+        case "Borrado en B2 activado": return ("trash.circle.fill", .red)
+        case "Borrado en B2 desactivado": return ("trash.slash.circle", .secondary)
+        case "App actualizada": return ("arrow.down.app.fill", .green)
+        case "Apagado programado": return ("power.circle.fill", .orange)
+        case "Apagado cancelado": return ("xmark.circle", .secondary)
+        case "Mac apagada": return ("power.circle", .secondary)
         default: return ("questionmark.circle", .secondary)
         }
     }
 
+    /// Events that can fail show a red cross instead of their usual icon; "Carpeta no encontrada"
+    /// is already a warning by nature, so it keeps its own orange triangle.
+    private static let failableEvents: Set<String> = [
+        "Renombrar", "Nueva carpeta", "URL generada", "Verificación de tamaño", "Verificación profunda",
+    ]
+
     private func eventRow(_ record: OperationRecord) -> some View {
-        let icon = eventIconAndColor(for: record.type)
+        let failed = !record.success && Self.failableEvents.contains(record.type)
+        let icon = failed ? (symbol: "xmark.octagon.fill", color: Color.red) : eventIconAndColor(for: record.type)
         return HStack {
             Text(record.date.formatted(date: .omitted, time: .shortened))
                 .frame(width: 70, alignment: .leading)
@@ -234,11 +258,32 @@ struct HistoryView: View {
             Image(systemName: icon.symbol).foregroundStyle(icon.color)
             Text(LocalizedStringKey(record.type))
             if let detail = record.detail {
-                Text(detail).foregroundStyle(.secondary)
+                // "Reintento" stores the failed operation's type ("Subida"...), which does localize.
+                (record.type == "Reintento" ? Text(LocalizedStringKey(detail)) : Text(detail))
+                    .foregroundStyle(.secondary)
             }
+            if record.type == "Verificación profunda", record.fileCount > 0 {
+                Text("\(record.fileCount) archivo(s)").foregroundStyle(.secondary)
+            }
+            if let remotePath = record.remotePath, let prefix = Self.pathPrefix(for: record.type) {
+                (Text(LocalizedStringKey(prefix)) + Text(remotePath)).foregroundStyle(.secondary)
+            }
+            if failed { Text(LocalizedStringKey("Falla")).foregroundStyle(.red) }
             Spacer()
         }
+        .lineLimit(1)
+        .truncationMode(.middle)
         .font(.system(size: Self.rowFontSize))
+    }
+
+    /// Which events show their bucket path after the detail, and with which connecting word
+    /// ("de " and "→ " already exist in the catalog from the operation rows).
+    private static func pathPrefix(for type: String) -> String? {
+        switch type {
+        case "Renombrar", "URL generada": return "de "
+        case "Nueva carpeta", "Destino cambiado": return "→ "
+        default: return nil
+        }
     }
 
     /// (SF Symbol name, tint) per operation type — record.type is always one of these six literal
@@ -326,6 +371,10 @@ struct HistoryView: View {
             if let remotePath = record.remotePath {
                 parts.append(Text("→ ") + Text(remotePath))
             }
+        }
+        // rclone's own error text for a failed operation (rclone only speaks English, so verbatim).
+        if !record.success, let reason = record.detail, !reason.isEmpty {
+            parts.append(Text(reason).foregroundColor(.red))
         }
         guard var result = parts.first else { return nil }
         for part in parts.dropFirst() { result = result + Text("  ") + part }

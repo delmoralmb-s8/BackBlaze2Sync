@@ -148,6 +148,7 @@ struct ContentView: View {
             // Forced regardless of whether this is a fresh detection or one already known from a
             // previous session — every time you open the app with a broken watch folder, you
             // should be told, not just the one time it first happened.
+            rclone.recordAppVersionChangeIfNeeded()
             if rclone.refreshWatchFolderMissingState() {
                 rclone.showWatchFolderMissingAlert = true
             }

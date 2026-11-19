@@ -193,6 +193,9 @@ final class RcloneManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(watchFolderPath, forKey: "b2sync.watchFolderPath")
             guard watchFolderPath != oldValue else { return }
+            if !watchFolderPath.isEmpty {
+                recordOperation(type: "Carpeta cambiada", fileCount: 0, success: true, detail: URL(fileURLWithPath: watchFolderPath).lastPathComponent, remotePath: watchFolderTargetPath())
+            }
             // A fresh path (the user just picked a new one, e.g. after "La carpeta ya no
             // existe") always deserves a clean slate rather than carrying over a stale warning
             // — or a stale "already uploaded" cache — from whatever the old path was.
@@ -246,7 +249,11 @@ final class RcloneManager: ObservableObject {
         }
     }
     @Published var watchFolderDeleteMirrorsToBucket: Bool = UserDefaults.standard.bool(forKey: "b2sync.watchFolderDeleteMirrorsToBucket") {
-        didSet { UserDefaults.standard.set(watchFolderDeleteMirrorsToBucket, forKey: "b2sync.watchFolderDeleteMirrorsToBucket") }
+        didSet {
+            UserDefaults.standard.set(watchFolderDeleteMirrorsToBucket, forKey: "b2sync.watchFolderDeleteMirrorsToBucket")
+            guard watchFolderDeleteMirrorsToBucket != oldValue else { return }
+            recordOperation(type: watchFolderDeleteMirrorsToBucket ? "Borrado en B2 activado" : "Borrado en B2 desactivado", fileCount: 0, success: true, remotePath: watchFolderTargetPath())
+        }
     }
     /// Set true right after a Carpeta sincronizada upload finishes successfully, so ContentView
     /// can wiggle the History toolbar button to point at it — not persisted, and not
@@ -303,6 +310,12 @@ final class RcloneManager: ObservableObject {
         log("[ERROR] \(context): \(errorText)")
     }
     private var process: Process?
+    /// Last "ERROR : ..." line rclone printed during the current run(), attached to failed
+    /// history rows so a red "Falla" says why. Reset at the start of every run().
+    private var lastRcloneError: String?
+    private static let errorDetailTypes: Set<String> = [
+        "Subida", "Descarga", "Mover", "Copiar", "Borrar", "Renombrar", "Nueva carpeta", "Comprimir",
+    ]
     private let historyKey = "b2sync.history.v1"
 
     // MARK: - Batch progress (across ALL items in one action, not reset per file)
@@ -396,6 +409,8 @@ final class RcloneManager: ObservableObject {
     private static let maxHistoryEntries = 2000
 
     private func recordOperation(type: String, fileCount: Int, success: Bool, bytes: Int64 = 0, bytesBefore: Int64 = 0, items: [OperationFileEntry] = [], detail: String? = nil, localPath: String? = nil, remotePath: String? = nil, sourceRemotePath: String? = nil, elapsedSeconds: TimeInterval = 0) {
+        var detail = detail
+        if !success, detail == nil, Self.errorDetailTypes.contains(type) { detail = lastRcloneError }
         let megabytes = Double(max(bytes, 0)) / 1_048_576
         let megabytesBefore = Double(max(bytesBefore, 0)) / 1_048_576
         // Anything under ~1s is too noisy to call a real rate (process startup, cache hits, tiny
@@ -422,6 +437,25 @@ final class RcloneManager: ObservableObject {
         recordOperation(type: active ? "Sincronización activada" : "Sincronización desactivada", fileCount: 0, success: true, remotePath: watchFolderTargetPath())
     }
 
+    /// Explicit user picks of the bucket destination (menu in WatchFolderView) go through here
+    /// so each real change is logged, unlike the silent reset chooseFolder() does on a new folder.
+    func setWatchFolderDestination(_ value: String) {
+        guard value != watchFolderBucketDestination else { return }
+        watchFolderBucketDestination = value
+        recordOperation(type: "Destino cambiado", fileCount: 0, success: true, remotePath: watchFolderTargetPath())
+    }
+
+    /// Logs "App actualizada" when the running version differs from the one last launched, which
+    /// covers Sparkle installs and manual replacements alike. First ever launch only stores it.
+    func recordAppVersionChangeIfNeeded() {
+        let key = "b2sync.lastRunVersion"
+        guard let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else { return }
+        let stored = UserDefaults.standard.string(forKey: key)
+        guard stored != current else { return }
+        UserDefaults.standard.set(current, forKey: key)
+        if let stored { recordOperation(type: "App actualizada", fileCount: 0, success: true, detail: "\(stored) → \(current)") }
+    }
+
     func clearHistory() {
         history.removeAll()
         UserDefaults.standard.removeObject(forKey: historyKey)
@@ -440,6 +474,7 @@ final class RcloneManager: ObservableObject {
         let id = UUID()
         let wrappedRetry: () -> Void = { [weak self] in
             self?.failedOperations.removeAll { $0.id == id }
+            self?.recordOperation(type: "Reintento", fileCount: 0, success: true, detail: type)
             retry()
         }
         failedOperations.append(FailedOperation(id: id, date: Date(), type: type, summary: summary, retry: wrappedRetry))
@@ -647,12 +682,16 @@ final class RcloneManager: ObservableObject {
     /// Lets the UI offer a real "Cancelar" instead of only a spinner with no way out — terminates
     /// whatever `generateShareLink` process is in flight; its own completion still fires (with
     /// a non-zero exit), the caller just needs to treat that the same as any other failure.
+    private var shareLinkCancelled = false
+
     func cancelShareLink() {
+        shareLinkCancelled = true
         shareLinkProcess?.terminate()
         shareLinkProcess = nil
     }
 
     func generateShareLink(path: String, expireDays: Int, completion: @escaping (String?) -> Void) {
+        shareLinkCancelled = false
         let task = Process()
         task.executableURL = URL(fileURLWithPath: rclonePath ?? "/usr/bin/false")
         task.arguments = Self.networkTimeoutArgs + ["link", "--expire", "\(max(expireDays, 1))d", path]
@@ -665,14 +704,21 @@ final class RcloneManager: ObservableObject {
             let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
             Task { @MainActor in
                 self?.shareLinkProcess = nil
+                // The URL itself is never stored (it embeds a live auth token), only that one was made.
+                let name = (path as NSString).lastPathComponent
+                let parent = Self.parentPath(of: path)
                 let link = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 if proc.terminationStatus == 0, let link, !link.isEmpty {
                     self?.log("[OK] URL para compartir generada (\(expireDays) día(s)).")
+                    self?.recordOperation(type: "URL generada", fileCount: 1, success: true, detail: "\(name) (\(max(expireDays, 1))d)", remotePath: parent)
                     completion(link)
                 } else {
                     let errorText = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
                     let suffix = (errorText?.isEmpty ?? true) ? "" : ": \(errorText!)"
                     self?.log("[ERROR] No se pudo generar la URL para compartir\(suffix)")
+                    if self?.shareLinkCancelled == false {
+                        self?.recordOperation(type: "URL generada", fileCount: 1, success: false, detail: "\(name) (\(max(expireDays, 1))d)", remotePath: parent)
+                    }
                     completion(nil)
                 }
             }
@@ -1144,6 +1190,7 @@ final class RcloneManager: ObservableObject {
         log("Creando carpeta: \(full)")
         run(arguments: ["touch", marker]) { [weak self] success in
             self?.log(success ? "[OK] Carpeta creada." : "[ERROR] No se pudo crear la carpeta.")
+            self?.recordOperation(type: "Nueva carpeta", fileCount: 1, success: success, detail: trimmed, remotePath: basePath)
             completion(success)
         }
     }
@@ -1243,6 +1290,7 @@ final class RcloneManager: ObservableObject {
         log("Renombrando \(item.name) → \(trimmed)")
         moveOneStaged(from: item.path, to: newPath, isDir: item.isDir) { [weak self] success in
             self?.log(success ? "[OK] Renombrado." : "[ERROR] No se pudo renombrar.")
+            self?.recordOperation(type: "Renombrar", fileCount: 1, success: success, detail: "\(item.name) → \(trimmed)", remotePath: Self.parentPath(of: item.path))
             self?.lastResult = success ? "success" : "error"
             completion(success)
         }
@@ -1839,6 +1887,7 @@ final class RcloneManager: ObservableObject {
     private func verifySizes(pairs: [(from: String, to: String)], index: Int = 0, okCount: Int = 0, failures: [String] = [], completion: @escaping () -> Void) {
         guard index < pairs.count else {
             verifyStatusSuccess = failures.isEmpty
+            recordOperation(type: "Verificación de tamaño", fileCount: pairs.count, success: failures.isEmpty, detail: "\(okCount)/\(pairs.count)")
             verifyStatusMessage = failures.isEmpty
                 ? "[OK] Archivos subidos correctamente \(okCount)/\(pairs.count)"
                 : "[WARN] Diferencia de tamaño en \(failures.count)/\(pairs.count): " + failures.joined(separator: "; ")
@@ -1981,6 +2030,12 @@ final class RcloneManager: ObservableObject {
         completion: @escaping (IntegrityResult?) -> Void
     ) {
         onProgress(0, 0)
+        let name = (remotePath as NSString).lastPathComponent
+        let originalCompletion = completion
+        let completion: (IntegrityResult?) -> Void = { [weak self] result in
+            self?.recordOperation(type: "Verificación profunda", fileCount: result?.totalCompared ?? 0, success: result?.isPerfectMatch ?? false, detail: name)
+            originalCompletion(result)
+        }
         remoteSHA1Hashes(path: remotePath) { remoteHashes in
             guard let remoteHashes else { completion(nil); return }
             Task.detached {
@@ -2037,6 +2092,7 @@ final class RcloneManager: ObservableObject {
         guard pendingUploads.isEmpty else { return }
         guard shutdownWhenDone else { return }
         shutdownCountdown = 30
+        recordOperation(type: "Apagado programado", fileCount: 0, success: true)
         shutdownTimer?.invalidate()
         shutdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -2045,6 +2101,7 @@ final class RcloneManager: ObservableObject {
                     self.shutdownTimer?.invalidate()
                     self.shutdownTimer = nil
                     self.shutdownCountdown = nil
+                    self.recordOperation(type: "Mac apagada", fileCount: 0, success: true)
                     self.shutdownMac()
                 } else {
                     self.shutdownCountdown = remaining - 1
@@ -2056,6 +2113,8 @@ final class RcloneManager: ObservableObject {
     /// The only way out of the countdown besides letting it hit 0 — meant for the sheet's
     /// "Cancelar" button.
     func cancelShutdownCountdown() {
+        // The sheet's binding also calls this after the countdown itself reaches 0 (already nil).
+        if shutdownCountdown != nil { recordOperation(type: "Apagado cancelado", fileCount: 0, success: true) }
         shutdownTimer?.invalidate()
         shutdownTimer = nil
         shutdownCountdown = nil
@@ -2170,6 +2229,7 @@ final class RcloneManager: ObservableObject {
         }
         task.arguments = fullArgs + arguments
 
+        lastRcloneError = nil
         let pipe = Pipe()
         task.standardOutput = pipe
         task.standardError = pipe
@@ -2242,6 +2302,9 @@ final class RcloneManager: ObservableObject {
                     speed = speedText
                 }
             }
+        }
+        if let range = line.range(of: "ERROR : ") {
+            lastRcloneError = String(line[range.upperBound...].prefix(200))
         }
         logRaw(line)
     }

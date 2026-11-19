@@ -124,7 +124,7 @@ struct WatchFolderView: View {
                         Spacer()
                         Menu {
                             Button {
-                                rclone.watchFolderBucketDestination = ""
+                                rclone.setWatchFolderDestination("")
                             } label: {
                                 if rclone.watchFolderBucketDestination.isEmpty {
                                     Label("Raíz del bucket (crear “\(localFolderName.isEmpty ? "…" : localFolderName)/”)", systemImage: "checkmark")
@@ -135,7 +135,7 @@ struct WatchFolderView: View {
                             Divider()
                             ForEach(bucketRootFolders, id: \.self) { folder in
                                 Button {
-                                    rclone.watchFolderBucketDestination = folder
+                                    rclone.setWatchFolderDestination(folder)
                                 } label: {
                                     if rclone.watchFolderBucketDestination == folder {
                                         Label(folder, systemImage: "checkmark")
@@ -169,7 +169,7 @@ struct WatchFolderView: View {
                 TextField("Nombre de la carpeta", text: $newFolderName)
                 Button("Crear") {
                     let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !trimmed.isEmpty { rclone.watchFolderBucketDestination = trimmed }
+                    if !trimmed.isEmpty { rclone.setWatchFolderDestination(trimmed) }
                 }
                 Button("Cancelar", role: .cancel) {}
             }
